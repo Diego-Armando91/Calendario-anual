@@ -22,6 +22,9 @@ x=[[m.NewBoolVar('') if A2[i,d] else m.NewConstant(0) for d in range(D)] for i i
 def B(): return m.NewBoolVar('')
 # ---------- duras
 for i in range(P):
+    for d in range(D):
+        if M.FORCED[i,d]: m.Add(x[i][d]==1)
+for i in range(P):
     for t in range(D-6): m.Add(sum(x[i][t+k] for k in range(7))<=6)
     for d in range(1,D):
         p,q=role[i,d-1],role[i,d]

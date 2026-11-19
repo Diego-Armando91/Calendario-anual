@@ -89,13 +89,29 @@ for d in range(D):
         names=[people[i].title() for i in range(P) if X[i,d] and C[i,d]=='N']
         wv.append([date[d],len(names),', '.join(names),sum(1 for i in range(P) if Xb[i,d] and Cb[i,d]=='N')]); wv.cell(wv.max_row,1).number_format='dd/mm/yyyy'
 wv.column_dimensions['A'].width=12; wv.column_dimensions['B'].width=16; wv.column_dimensions['C'].width=60; wv.column_dimensions['D'].width=16
+# --- Domingos noche
+wdn=wb.create_sheet('Domingos noche')
+wdn.append(['Fecha','Personas de noche','Quién (propuesta)','Personas (actual)'])
+for c in wdn[1]: c.font=Font(bold=True)
+for d in range(D):
+    if wd[d]==6:
+        names=[people[i].title() for i in range(P) if X[i,d] and C[i,d]=='N']
+        wdn.append([date[d],len(names),', '.join(names),sum(1 for i in range(P) if Xb[i,d] and Cb[i,d]=='N')]); wdn.cell(wdn.max_row,1).number_format='dd/mm/yyyy'
+        if len(names)!=2: wdn.cell(wdn.max_row,2).fill=PatternFill('solid',fgColor='FFC7CE')
+wdn.column_dimensions['A'].width=12; wdn.column_dimensions['B'].width=16; wdn.column_dimensions['C'].width=60; wdn.column_dimensions['D'].width=16
+wdn['F1']='Domingos noche por persona'; wdn['F1'].font=Font(bold=True)
+wdn['F2']='Persona'; wdn['G2']='Propuesta'; wdn['H2']='Actual'
+for c in ('F2','G2','H2'): wdn[c].font=Font(bold=True)
+for k,i in enumerate([i for i in range(P) if any(role[i,d]=='N' for d in range(D))]):
+    wdn.cell(3+k,6,people[i].title()); wdn.cell(3+k,7,sum(1 for d in range(D) if wd[d]==6 and X[i,d] and C[i,d]=='N')); wdn.cell(3+k,8,sum(1 for d in range(D) if wd[d]==6 and Xb[i,d] and Cb[i,d]=='N'))
+wdn.column_dimensions['F'].width=16
 # --- Criterios
 wk=wb.create_sheet('Criterios')
 for l in ['PARÁMETROS USADOS EN LA PROPUESTA','',
  'Rotación: Esther/David y Diego/Lorena alternan mañana-noche; Bea/Denia alternan mañana-tarde, en bloques de 5 semanas (algún bloque de 6 para equilibrar vacaciones). Cada semana de lunes a domingo es entera del mismo turno.',
  'Fijos: Chema y Juanma (C) mañana; Michel, Alfredo, Irene y Sofía tarde; Armando, Juanma V y Rubén noche.',
- 'Vacaciones: se mantienen exactamente las del cuadrante original (celdas negras).',
- 'Días azules: no obligatorios, se pueden trabajar. Cierres (25-26 mar, 24-25 y 31 dic): nadie trabaja. Noches especiales 00:00-07:00 (1 ene, 6 ene, 27 mar, 12 oct): solo personal de noche, 7 h.',
+ 'Vacaciones: se mantienen las del cuadrante original (celdas negras) y el fin de semana anterior a unas vacaciones es libre.',
+ 'Días azules: no obligatorios, se pueden trabajar. Cierres (25-26 mar, 24-25 y 31 dic): nadie trabaja. Noches especiales 00:00-07:00 (1 ene, 6 ene, 27 mar, 12 oct): solo personal de noche, 7 h. La noche anterior a un festivo o cierre no se trabaja (5 ene, 24 mar, 11 oct, 23 dic), y el 6 ene y el 12 oct no hay mañana ni tarde. Primer fin de semana (2-3 ene): solo Chema de mañana y Michel de tarde.',
  'Cobertura objetivo: mañana 3, tarde 3, noche 3 de lunes a jueves (hasta 4 si sobra gente). Domingo noche 2.',
  'Mínimo semanal: 4 días por semana completa (5 lo habitual), 3 en semanas con festivo no laborable o cierre; proporcional si hay vacaciones parte de la semana.',
  'Fines de semana de mañana y tarde: mismo formato que el original (1 persona hasta el 3 de septiembre, 2 desde el 4 de septiembre); quien trabaja el sábado trabaja también el domingo.',

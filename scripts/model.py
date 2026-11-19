@@ -39,6 +39,17 @@ avail2=avail.copy()
 for d in range(D):
     if date[d] in SPECIAL: avail2[:,d]&=(role[:,d]=='N')
     if wd[d]==5 and d not in SATN: avail2[:,d]&=(role[:,d]!='N')
+    if date[d] in C.NIGHT_OFF: avail2[:,d]&=(role[:,d]!='N')
+    if date[d] in C.DAY_OFF: avail2[:,d]&=(role[:,d]=='N')
+FORCED=np.zeros((P,D),bool)
+for _f,_m in C.FIXED.items():
+    d=(_f-start).days
+    for c,ns in _m.items():
+        keep=[IDX[n] for n in ns]
+        for i in range(P):
+            if role[i,d]==c:
+                if i in keep and avail2[i,d]: FORCED[i,d]=True
+                else: avail2[i,d]=False
 HRS=np.full((P,D),8.0)
 for i in range(P):
     for d in range(D):
@@ -54,7 +65,8 @@ for i in range(P):
         a=sum(1 for d in days if (not vac[i,d] or LIBRES[i,d]) and not closed[d])  # el finde libre antes de vacaciones no rebaja el mínimo
         if w in HOLWEEK: m=min(C.WEEK_MIN_HOLIDAY,int(a*4/7)) if a<7 else C.WEEK_MIN_HOLIDAY
         else: m=C.WEEK_MIN_NORMAL if (a==7 and len(days)==7) else int(a*4/7)
-        WEEKMIN[i,w]=min(m,sum(1 for d in days if avail2[i,d]))  # nunca más que los días realmente trabajables
+        WEEKMIN[i,w]=min(m,sum(1 for d in days if avail2[i,d]))
+        if len(days)<7 and w==0: WEEKMIN[i,w]=0   # vie 1 - dom 3 ene: semana parcial, sin mínimo  # nunca más que los días realmente trabajables
 def build():
     nx=P*D; ix=lambda i,d:i*D+d
     bz=nx; bs=bz+P*D; bw=bs+P*D; bst=bw+P*D; bc=bst+P*D; bf=bc+3*D*3; bwk=bf+8; NWE=60; bmo=bwk+P*NWE; bwm=bmo+P*12; n=bwm+P*NW

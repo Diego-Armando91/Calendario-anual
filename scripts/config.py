@@ -49,3 +49,10 @@ LIBRES_ANTES_VACACIONES=True
 # Límites por persona y año (CP-SAT)
 MAX_RACHAS6=4        # rachas de 6 días seguidos
 MAX_DESCANSOS_1=3    # descansos de un solo día
+# Noches que no se trabajan: la noche anterior a un festivo/cierre cuenta como el festivo
+# (p. ej. la noche del 6 de enero es la del martes 5).
+NIGHT_OFF={D(2027,1,5),D(2027,3,24),D(2027,10,11),D(2027,12,23)}
+# Días de festivo en que mañana y tarde no trabajan (además de CLOSED; ya lo hace SPECIAL)
+DAY_OFF={D(2027,1,6),D(2027,10,12)}
+# Asignaciones fijas: fecha -> turno -> personas (el resto de ese turno libra ese día)
+FIXED={D(2027,1,2):{'M':['CHEMA'],'T':['MICHEL']}, D(2027,1,3):{'M':['CHEMA'],'T':['MICHEL']}}

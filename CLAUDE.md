@@ -15,7 +15,7 @@ Diego ha visto cuatro versiones (v1–v4) y ha ido añadiendo reglas. La v4 le g
 - a Armando, una en enero
 - a Rubén, dos entre enero y febrero
 
-Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v7**.
+Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v8**.
 
 ## 2. Datos (`data/`)
 
@@ -115,6 +115,7 @@ python calendario_persona.py propuesta_v5.csv "DIEGO ARMANDO" v5
 
 **Duras**
 1. Se respetan las vacaciones (celdas negras) y los cierres.
+   - **1c (v8):** la noche anterior a un festivo o cierre no se trabaja (5 ene, 24 mar, 11 oct, 23 dic: `config.NIGHT_OFF`); el 6 ene y el 12 oct no hay mañana ni tarde (`config.DAY_OFF`). El 2-3 ene solo trabajan Chema (mañana) y Michel (tarde) (`config.FIXED`).
    - **1b (v7):** el fin de semana anterior a unas vacaciones es libre. Está en `data/libres_antes_vacaciones.json` (los que pintó Diego en su v6 más los de vacaciones que empiezan de lunes a viernes). **A Diego no se le aplica la regla general**: solo los que pintó él (22-23 de mayo y 19-20 de junio).
 2. **Cada semana de lunes a domingo es entera de un mismo turno.**
 3. Las parejas rotan en bloques de 5 semanas (alguno de 4 o 6 para cuadrar vacaciones).
