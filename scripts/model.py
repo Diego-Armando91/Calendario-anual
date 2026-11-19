@@ -35,6 +35,14 @@ for d in range(D):
             else: t=1 if date[d]<C.WEEKEND_TWO_FROM else 2
             cap=t; a=W['under_weekend']; o=W['over_weekend']
         TGT[k,d]=t;CAP[k,d]=cap;W1[k,d]=a;WO[k,d]=o
+# Viernes y domingo noche: si alguien del turno de noche tiene vacaciones esa semana, basta con 2 y 1
+NIGHT_VAC_WEEK=set()
+for d in range(D):
+    if any(role[i,d]=='N' and VAC_REAL[i,d] for i in range(P)): NIGHT_VAC_WEEK.add(wk(d))
+for d in range(D):
+    if d in OVER or wk(d) not in NIGHT_VAC_WEEK: continue
+    if wd[d]==4: TGT[2,d]=min(TGT[2,d],C.FRI_NIGHT_VAC); CAP[2,d]=TGT[2,d]+1
+    if wd[d]==6: TGT[2,d]=min(TGT[2,d],C.SUN_NIGHT_VAC); CAP[2,d]=C.SUN_NIGHT
 avail2=avail.copy()
 for d in range(D):
     if date[d] in SPECIAL: avail2[:,d]&=(role[:,d]=='N')

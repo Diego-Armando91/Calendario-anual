@@ -17,9 +17,19 @@ if getattr(C,'LIBRES_ANTES_VACACIONES',True) and os.path.exists(_LIB):
     for _n,_d in json.load(open(_LIB)):
         LIBRES[people.index(_n),(dt.date.fromisoformat(_d)-C.YEAR_START).days]=True
     vac=vac|LIBRES
+# Días no disponibles por motivos personales (p. ej. fines de semana con hijos): data/no_disponible.json
+_ND=os.path.join(DATA,'no_disponible.json')
+if os.path.exists(_ND):
+    for _n,_d in json.load(open(_ND)):
+        _i=people.index(_n); _k=(dt.date.fromisoformat(_d)-C.YEAR_START).days
+        LIBRES[_i,_k]=True; vac[_i,_k]=True
+VAC_REAL=vac&~LIBRES   # vacaciones de verdad (sin findes libres ni días no disponibles)
 CLOSED=C.CLOSED; SPECIAL=C.SPECIAL
 closed=np.array([d in CLOSED for d in date])
 avail=(~vac)&(~closed[None,:])
+# Días rojos (festivos no laborables / cierres): solo ahí se puede romper la regla de noches mínimas
+ROJO=np.array([[fl[p][i]=='FFFF0000' for i in range(D)] for p in people])|closed[None,:]
+for _x in getattr(C,'NIGHT_OFF',()): ROJO[:,(_x-C.YEAR_START).days]=True
 SATN={d for d in range(D) if wd[d]==5 and any(a<=date[d]<=b for a,b in C.SAT_NIGHT_PERIODS)}
 JA=np.array([{k.split(' (')[0]:v for k,v in summ.items()}[n]['ja'] for n in people],float)
 def load_roles():

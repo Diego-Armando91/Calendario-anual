@@ -33,6 +33,16 @@ for i in range(P):
         if wd[d]==5 and ISDAY[i,d] and ISDAY[i,d+1] and A2[i,d] and A2[i,d+1]: m.Add(x[i][d]==x[i][d+1])
     hrs=sum(int(M.HRS[i,d])*x[i][d] for d in range(D) if A2[i,d])
     m.Add(hrs>=int(JA[i])); m.Add(hrs<=int(JA[i])+C.HOURS_TOL)
+# ---------- noches: al menos MIN_NIGHT_RUN seguidas (solo se rompe junto a un día rojo o al principio/fin del año)
+NIGHT=lambda i,d: x[i][d] if (0<=d<D and role[i,d]=='N') else 0
+for i in range(P):
+    for d in range(D):
+        if role[i,d]!='N' or not A2[i,d]: continue
+        if d==0 or d==D-1 or ROJO[i,d-1] or ROJO[i,d+1]: continue
+        m.Add(x[i][d]<=NIGHT(i,d-1)+NIGHT(i,d+1))      # nada de noches sueltas
+        if C.MIN_NIGHT_RUN>=3 and d+2<D and role[i,d+1]=='N' and A2[i,d+1]:
+            # tanda de exactamente 2 noches: penalizada (mejor 3 o más)
+            t2=B(); m.Add(t2>=x[i][d]+x[i][d+1]-NIGHT(i,d-1)-NIGHT(i,d+2)-1); obj.append(W.get('night_run2',40)*t2)
 # ---------- cobertura
 cl={'M':0,'T':1,'N':2}
 for c in 'MTN':

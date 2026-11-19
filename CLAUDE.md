@@ -15,7 +15,7 @@ Diego ha visto cuatro versiones (v1–v4) y ha ido añadiendo reglas. La v4 le g
 - a Armando, una en enero
 - a Rubén, dos entre enero y febrero
 
-Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v8**.
+Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v9**.
 
 ## 2. Datos (`data/`)
 
@@ -116,6 +116,8 @@ python calendario_persona.py propuesta_v5.csv "DIEGO ARMANDO" v5
 **Duras**
 1. Se respetan las vacaciones (celdas negras) y los cierres.
    - **1c (v8):** la noche anterior a un festivo o cierre no se trabaja (5 ene, 24 mar, 11 oct, 23 dic: `config.NIGHT_OFF`); el 6 ene y el 12 oct no hay mañana ni tarde (`config.DAY_OFF`). El 2-3 ene solo trabajan Chema (mañana) y Michel (tarde) (`config.FIXED`).
+   - **1d (v9):** Juanma (C1) no trabaja los fines de semana que tiene a su hijo (alternos, `data/no_disponible.json`). Se tratan como libres: no rebajan su mínimo semanal y recupera las horas entre semana.
+   - **1e (v9):** de noche, nada de noches sueltas: tandas de al menos 2 noches seguidas (duro) y mejor 3 o más (se penalizan las de 2). Solo se puede romper junto a un día rojo (festivo no laborable o cierre) (`config.MIN_NIGHT_RUN`).
    - **1b (v7):** el fin de semana anterior a unas vacaciones es libre. Está en `data/libres_antes_vacaciones.json` (los que pintó Diego en su v6 más los de vacaciones que empiezan de lunes a viernes). **A Diego no se le aplica la regla general**: solo los que pintó él (22-23 de mayo y 19-20 de junio).
 2. **Cada semana de lunes a domingo es entera de un mismo turno.**
 3. Las parejas rotan en bloques de 5 semanas (alguno de 4 o 6 para cuadrar vacaciones).
@@ -127,6 +129,7 @@ python calendario_persona.py propuesta_v5.csv "DIEGO ARMANDO" v5
 **Blandas**
 8. **Domingo noche: siempre o casi siempre 2 personas.**
 9. Viernes noche: 3 personas la mayoría de las veces. Si hace falta, 2 (sobre todo cuando no hay sábado noche).
+   - **v9:** si alguien del turno de noche tiene vacaciones esa semana, basta con 2 el viernes noche y 1 el domingo noche (`config.FRI_NIGHT_VAC`, `config.SUN_NIGHT_VAC`).
 10. Fines de semana de mañana y tarde con el mismo formato que el original: 1 persona hasta el 3 de septiembre y 2 desde el 4 de septiembre. Quien trabaja el sábado trabaja también el domingo.
 11. **Evitar los descansos de un solo día.** El peor caso es viernes noche, sábado libre y domingo noche.
 12. **NUEVA: todas las semanas se trabaja.** Mínimo 3 días si hay festivo no laborable, 4 en el mejor de los casos y 5 lo normal. Nada de semanas vacías.

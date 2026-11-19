@@ -56,3 +56,7 @@ NIGHT_OFF={D(2027,1,5),D(2027,3,24),D(2027,10,11),D(2027,12,23)}
 DAY_OFF={D(2027,1,6),D(2027,10,12)}
 # Asignaciones fijas: fecha -> turno -> personas (el resto de ese turno libra ese día)
 FIXED={D(2027,1,2):{'M':['CHEMA'],'T':['MICHEL']}, D(2027,1,3):{'M':['CHEMA'],'T':['MICHEL']}}
+# Noches: tandas de al menos 2 noches seguidas (duro, salvo junto a un día rojo); 3 es lo preferido (se penalizan las de 2)
+MIN_NIGHT_RUN=3
+# Si alguien del turno de noche tiene vacaciones esa semana: viernes noche 2 y domingo noche 1 (en vez de 3 y 2)
+FRI_NIGHT_VAC=2; SUN_NIGHT_VAC=1
