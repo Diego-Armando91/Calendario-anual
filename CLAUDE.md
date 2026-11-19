@@ -15,7 +15,7 @@ Diego ha visto cuatro versiones (v1–v4) y ha ido añadiendo reglas. La v4 le g
 - a Armando, una en enero
 - a Rubén, dos entre enero y febrero
 
-Esto **no puede ser** (regla 4.12). La versión que toca ahora es la **v5**.
+Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v7**.
 
 ## 2. Datos (`data/`)
 
@@ -115,6 +115,7 @@ python calendario_persona.py propuesta_v5.csv "DIEGO ARMANDO" v5
 
 **Duras**
 1. Se respetan las vacaciones (celdas negras) y los cierres.
+   - **1b (v7):** el fin de semana anterior a unas vacaciones es libre. Está en `data/libres_antes_vacaciones.json` (los que pintó Diego en su v6 más los de vacaciones que empiezan de lunes a viernes). **A Diego no se le aplica la regla general**: solo los que pintó él (22-23 de mayo y 19-20 de junio).
 2. **Cada semana de lunes a domingo es entera de un mismo turno.**
 3. Las parejas rotan en bloques de 5 semanas (alguno de 4 o 6 para cuadrar vacaciones).
 4. Máximo 6 días seguidos.
@@ -134,6 +135,8 @@ python calendario_persona.py propuesta_v5.csv "DIEGO ARMANDO" v5
 13. Noches lo más seguidas posible: tandas continuas de 4 o 5 noches, que pueden cruzar de una semana a otra (por ejemplo, de jueves a martes, o de domingo a jueves). Que no se partan todas las semanas.
 14. Fines de semana y sábados noche alternos, como máximo 2 al mes (3 solo si las vacaciones obligan). Se permiten **dos seguidos de vez en cuando, pero no a menudo**.
 15. Alguna semana de 6 días está permitida, pero no puede ser lo normal.
+    - **v7: como mucho 6 rachas de 6 días seguidos por persona y año** (`config.MAX_RACHAS6`).
+    - **v7: como mucho 3 descansos de un solo día por persona y año** (`config.MAX_DESCANSOS_1`).
 16. Los fines de semana se reparten por igual dentro de cada grupo. Los de noche fija hacen menos.
 17. Las personas que rotan quedan lo más iguales posible entre sí (noches y fines de semana).
 18. Los días azules no son obligatorios.

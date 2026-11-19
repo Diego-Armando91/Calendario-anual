@@ -10,6 +10,13 @@ def wk(d): return (d+4)//7          # semanas lunes-domingo; 0 = vie 1 a dom 3 e
 NW=wk(D-1)+1
 IDX={n.split(' (')[0]:i for i,n in enumerate(people)}
 vac=np.array([[fl[p][i]=='theme1' for i in range(D)] for p in people])
+# Fines de semana anteriores a las vacaciones: libres (se tratan como vacaciones). Ver CLAUDE.md, regla 1b.
+_LIB=os.path.join(DATA,'libres_antes_vacaciones.json')
+LIBRES=np.zeros_like(vac)
+if getattr(C,'LIBRES_ANTES_VACACIONES',True) and os.path.exists(_LIB):
+    for _n,_d in json.load(open(_LIB)):
+        LIBRES[people.index(_n),(dt.date.fromisoformat(_d)-C.YEAR_START).days]=True
+    vac=vac|LIBRES
 CLOSED=C.CLOSED; SPECIAL=C.SPECIAL
 closed=np.array([d in CLOSED for d in date])
 avail=(~vac)&(~closed[None,:])

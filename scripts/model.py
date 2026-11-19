@@ -51,10 +51,10 @@ WEEKMIN=np.zeros((P,NW),int)
 for i in range(P):
     for w in range(NW):
         days=[d for d in range(D) if wk(d)==w]
-        a=sum(1 for d in days if not vac[i,d] and not closed[d])
+        a=sum(1 for d in days if (not vac[i,d] or LIBRES[i,d]) and not closed[d])  # el finde libre antes de vacaciones no rebaja el mínimo
         if w in HOLWEEK: m=min(C.WEEK_MIN_HOLIDAY,int(a*4/7)) if a<7 else C.WEEK_MIN_HOLIDAY
         else: m=C.WEEK_MIN_NORMAL if (a==7 and len(days)==7) else int(a*4/7)
-        WEEKMIN[i,w]=m
+        WEEKMIN[i,w]=min(m,sum(1 for d in days if avail2[i,d]))  # nunca más que los días realmente trabajables
 def build():
     nx=P*D; ix=lambda i,d:i*D+d
     bz=nx; bs=bz+P*D; bw=bs+P*D; bst=bw+P*D; bc=bst+P*D; bf=bc+3*D*3; bwk=bf+8; NWE=60; bmo=bwk+P*NWE; bwm=bmo+P*12; n=bwm+P*NW

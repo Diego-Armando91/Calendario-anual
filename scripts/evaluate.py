@@ -116,6 +116,9 @@ def report(x):
     print('Viernes noche + sábado libre + domingo noche:',vf)
     wb=week_below_min(x); print('Semanas por debajo del mínimo semanal:',len(wb), wb[:10])
     print('Horas sobre JA:',hours(x))
+    print('Máx. por persona -> descansos de 1 día:',max(v['simples'] for v in per.values()),' rachas de 6:',max(v['rachas6'] for v in per.values()),
+          ' | personas con >%d descansos de 1 día: %s' % (C.MAX_DESCANSOS_1,[n for n,v in per.items() if v['simples']>C.MAX_DESCANSOS_1]),
+          ' | con >%d rachas de 6: %s' % (C.MAX_RACHAS6,[n for n,v in per.items() if v['rachas6']>C.MAX_RACHAS6]))
     print('Violaciones duras:',len(hard_violations(x)), hard_violations(x)[:5])
     for n in people: print('  ',n,per[n],ws[n])
 if __name__=='__main__':

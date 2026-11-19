@@ -14,7 +14,7 @@ W=dict(C.W)
 W.setdefault('night_run6', 20)
 ap=argparse.ArgumentParser(); ap.add_argument('--inicio',default=None); ap.add_argument('--minutos',type=float,default=20)
 ap.add_argument('--salida',default='propuesta_cpsat.csv'); ap.add_argument('--hilos',type=int,default=8)
-ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--semilla',type=int,default=1)
+ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--semilla',type=int,default=1)
 a=ap.parse_args()
 role=M.role; A2=M.avail2; ISDAY=M.ISDAY
 m=cp_model.CpModel(); obj=[]
@@ -43,18 +43,19 @@ for c in 'MTN':
             obj+= [int(M.W1[k,d])*u, int(M.W1[k,d])*u2]
         o=m.NewIntVar(0,P,''); m.Add(o>=s-cap); obj.append(int(M.WO[k,d])*o)
 # ---------- por persona
+Z={i:[] for i in range(P)}; S6={i:[] for i in range(P)}
 for i in range(P):
     for d in range(1,D-1):
         if vac[i,d]: continue
         if not (A2[i,d-1] and A2[i,d+1]): continue
         z=B(); m.Add(z>=x[i][d-1]+x[i][d+1]-x[i][d]-1)
         w=W['single_rest_fri_sun_night'] if (wd[d]==5 and d not in SATN and role[i,d]=='N') else W['single_rest']
-        obj.append(w*z)
+        obj.append(w*z); Z[i].append(z)
         if A2[i,d]:
             iw=B(); m.Add(iw>=x[i][d]-x[i][d-1]-x[i][d+1]); obj.append(W['isolated_work']*iw)
     for t in range(D-5):
         if all(A2[i,t+k] for k in range(6)):
-            s6=B(); m.Add(sum(x[i][t+k] for k in range(6))-5<=s6); obj.append(W['six_days']*s6)
+            s6=B(); m.Add(sum(x[i][t+k] for k in range(6))-5<=s6); obj.append(W['six_days']*s6); S6[i].append(s6)
             if all(role[i,t+k]=='N' for k in range(6)): obj.append(W['night_run6']*s6)
     for d in range(D):
         if A2[i,d]:
@@ -67,6 +68,12 @@ for i in range(P):
             if a.minimo_duro: m.Add(s>=mn)
             else:
                 v=m.NewIntVar(0,7,''); m.Add(v>=mn-s); obj.append(W['week_min']*v)
+# ---------- límites por persona (rachas de 6 y descansos de 1 día)
+for i in range(P):
+    for lst,lim in ((S6[i],C.MAX_RACHAS6),(Z[i],C.MAX_DESCANSOS_1)):
+        if a.limites_duros: m.Add(sum(lst)<=lim)
+        else:
+            e=m.NewIntVar(0,len(lst),''); m.Add(e>=sum(lst)-lim); obj.append(W.get('limit_excess',400)*e)
 # ---------- equidad
 def spread(exprs,weight):
     mx=m.NewIntVar(0,400,''); mn=m.NewIntVar(0,400,'')
