@@ -39,8 +39,8 @@ W=dict(
     run_start_night=30, run_start_day=4,   # cada inicio de tanda (favorece tandas largas y seguidas)
     fair_weekends=60,        # (máx - mín) de fines de semana dentro de cada grupo
     fair_rot_nights=20,      # (máx - mín) de noches entre los 4 que rotan M/N
-    consecutive_weekends=25, # dos fines de semana seguidos
-    month_3_weekends=40,     # tercer fin de semana en un mes
+    consecutive_weekends=90, # dos fines de semana seguidos
+    month_3_weekends=150,     # tercer fin de semana en un mes
     week_min=200,            # por cada día que falte para el mínimo semanal
 )
 HOURS_TOL=8   # horas anuales entre JA y JA+8
