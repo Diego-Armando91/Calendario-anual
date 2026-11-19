@@ -14,10 +14,20 @@ W=dict(C.W)
 W.setdefault('night_run6', 20)
 ap=argparse.ArgumentParser(); ap.add_argument('--inicio',default=None); ap.add_argument('--minutos',type=float,default=20)
 ap.add_argument('--salida',default='propuesta_cpsat.csv'); ap.add_argument('--hilos',type=int,default=8)
-ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--semilla',type=int,default=1)
+ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1)
 a=ap.parse_args()
 role=M.role; A2=M.avail2; ISDAY=M.ISDAY
 m=cp_model.CpModel(); obj=[]
+# Reoptimización parcial (--libre): las celdas fuera de la ventana quedan fijas y las reglas duras
+# solo se imponen donde toca alguna celda libre (lo fijo se respeta tal cual, aunque incumpla algo).
+FREE=np.ones((P,D),bool)
+if a.libre:
+    _f,_t,_g=a.libre.split(','); f0=(dt.date.fromisoformat(_f)-start).days; f1=(dt.date.fromisoformat(_t)-start).days
+    FREE[:]=False
+    for i in range(P):
+        for d in range(f0,f1+1):
+            if role[i,d] in _g: FREE[i,d]=True
+def T(i,ds): return any(FREE[i,d] for d in ds if 0<=d<D)
 x=[[m.NewBoolVar('') if A2[i,d] else m.NewConstant(0) for d in range(D)] for i in range(P)]
 def B(): return m.NewBoolVar('')
 # ---------- duras
@@ -25,24 +35,35 @@ for i in range(P):
     for d in range(D):
         if M.FORCED[i,d]: m.Add(x[i][d]==1)
 for i in range(P):
-    for t in range(D-6): m.Add(sum(x[i][t+k] for k in range(7))<=6)
+    for t in range(D-6):
+        if T(i,range(t,t+7)): m.Add(sum(x[i][t+k] for k in range(7))<=6)
     for d in range(1,D):
         p,q=role[i,d-1],role[i,d]
-        if p!=q and ((p=='N' and q in 'MT') or (p=='T' and q=='M')): m.Add(x[i][d-1]+x[i][d]<=1)
+        if p!=q and ((p=='N' and q in 'MT') or (p=='T' and q=='M')) and T(i,(d-1,d)): m.Add(x[i][d-1]+x[i][d]<=1)
     for d in range(D-1):
-        if wd[d]==5 and ISDAY[i,d] and ISDAY[i,d+1] and A2[i,d] and A2[i,d+1]: m.Add(x[i][d]==x[i][d+1])
-    hrs=sum(int(M.HRS[i,d])*x[i][d] for d in range(D) if A2[i,d])
-    m.Add(hrs>=int(JA[i])); m.Add(hrs<=int(JA[i])+C.HOURS_TOL)
+        if wd[d]==5 and ISDAY[i,d] and ISDAY[i,d+1] and A2[i,d] and A2[i,d+1] and T(i,(d,d+1)): m.Add(x[i][d]==x[i][d+1])
+    if T(i,range(D)):
+        hrs=sum(int(M.HRS[i,d])*x[i][d] for d in range(D) if A2[i,d])
+        if a.libre:   # celdas fijas trabajadas aunque el modelo no las permita (p. ej. en vacaciones): cuentan horas
+            x0_=load_solution(a.inicio); hrs=hrs+int(sum(M.HRS[i,d] for d in range(D) if not A2[i,d] and x0_[i,d]))
+        m.Add(hrs>=int(JA[i])); m.Add(hrs<=int(JA[i])+C.HOURS_TOL)
 # ---------- noches: al menos MIN_NIGHT_RUN seguidas (solo se rompe junto a un día rojo o al principio/fin del año)
 NIGHT=lambda i,d: x[i][d] if (0<=d<D and role[i,d]=='N') else 0
 for i in range(P):
     for d in range(D):
         if role[i,d]!='N' or not A2[i,d]: continue
         if d==0 or d==D-1 or ROJO[i,d-1] or ROJO[i,d+1]: continue
+        if not T(i,(d-1,d,d+1)): continue
         m.Add(x[i][d]<=NIGHT(i,d-1)+NIGHT(i,d+1))      # nada de noches sueltas
         if C.MIN_NIGHT_RUN>=3 and d+2<D and role[i,d+1]=='N' and A2[i,d+1]:
             # tanda de exactamente 2 noches: penalizada (mejor 3 o más)
             t2=B(); m.Add(t2>=x[i][d]+x[i][d+1]-NIGHT(i,d-1)-NIGHT(i,d+2)-1); obj.append(W.get('night_run2',40)*t2)
+# ---------- fines de semana marcados con 1 sola persona de mañana y de tarde (duro)
+for _dd in getattr(C,'WEEKEND_ONE',()):
+    d=(_dd-start).days
+    for c in 'MT':
+        ps=[x[i][d] for i in range(P) if role[i,d]==c and A2[i,d]]
+        if ps: m.Add(sum(ps)<=1)
 # ---------- cobertura
 cl={'M':0,'T':1,'N':2}
 for c in 'MTN':
@@ -78,7 +99,7 @@ for i in range(P):
         mn=int(M.WEEKMIN[i,w])
         if mn>0:
             s=sum(x[i][d] for d in range(D) if wk(d)==w and A2[i,d])
-            if a.minimo_duro: m.Add(s>=mn)
+            if a.minimo_duro and T(i,[d for d in range(D) if wk(d)==w]): m.Add(s>=mn)
             else:
                 v=m.NewIntVar(0,7,''); m.Add(v>=mn-s); obj.append(W['week_min']*v)
 # ---------- límites por persona (rachas de 6 y descansos de 1 día)
@@ -118,6 +139,17 @@ for i in range(P):
         if len(ent)>2:
             v=m.NewIntVar(0,5,''); m.Add(sum(ent)-2<=v); obj.append(W['month_3_weekends']*v)
 m.Minimize(sum(obj))
+if a.libre:
+    x0=load_solution(a.inicio)
+    for i in range(P):          # cambiar lo mínimo respecto al punto de partida
+        for d in range(D):
+            if FREE[i,d] and A2[i,d]: obj.append(W.get('cambio',400)*(x[i][d] if x0[i,d]==0 else 1-x[i][d]))
+    m.Minimize(sum(obj))
+    nfix=0
+    for i in range(P):
+        for d in range(D):
+            if A2[i,d] and not FREE[i,d]: m.Add(x[i][d]==int(x0[i,d])); nfix+=1
+    print('celdas fijas',nfix,flush=True)
 if a.inicio:
     x0=load_solution(a.inicio)
     for i in range(P):

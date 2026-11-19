@@ -60,3 +60,5 @@ FIXED={D(2027,1,2):{'M':['CHEMA'],'T':['MICHEL']}, D(2027,1,3):{'M':['CHEMA'],'T
 MIN_NIGHT_RUN=3
 # Si alguien del turno de noche tiene vacaciones esa semana: viernes noche 2 y domingo noche 1 (en vez de 3 y 2)
 FRI_NIGHT_VAC=2; SUN_NIGHT_VAC=1
+# Fines de semana de mañana/tarde con 1 sola persona aunque sea después del 4 de septiembre
+WEEKEND_ONE={D(2027,12,11),D(2027,12,12),D(2027,12,18),D(2027,12,19)}

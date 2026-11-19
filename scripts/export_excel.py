@@ -201,4 +201,16 @@ for l in ['CRITERIOS DE LA PROPUESTA','',
  '','CÓMO EDITAR: cambia los códigos en la hoja Propuesta anual (o borra la celda para dejar descanso). El resto de hojas se recalcula solo; lo que no cumple sale en rojo.']:
     wk_.append([l])
 wk_.column_dimensions['A'].width=170; wk_['A1'].font=Font(bold=True,size=13)
+# ======================= Cambios respecto a otra versión (opcional: 3er argumento = CSV anterior)
+if len(sys.argv)>3:
+    xa=load_solution(sys.argv[3]); wch=wb.create_sheet('Cambios',1)
+    wch.append([f'Cambios respecto a la versión anterior ({sys.argv[3]}). Celdas de la hoja Propuesta anual que han cambiado.']); wch['A1'].font=Font(bold=True,size=12)
+    wch.append(['Persona','Fecha','Día','Antes','Ahora']);
+    for c in wch[2]: c.font=Font(bold=True)
+    for i in range(P):
+        for d in range(D):
+            if xa[i,d]!=x[i,d]:
+                wch.append([people[i].title(),date[d],DIASF[wd[d]],code_of(i,d) if xa[i,d] else 'descanso',code_of(i,d) if x[i,d] else 'descanso'])
+                wch.cell(wch.max_row,2).number_format='dd/mm/yyyy'
+    for c_,w_ in zip('ABCDE',(16,12,11,10,10)): wch.column_dimensions[c_].width=w_
 out=os.path.join(OUT,f'Propuesta_Cuadrante_2027_{TAG}.xlsx'); wb.save(out); print('ok',out)

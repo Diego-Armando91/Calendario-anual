@@ -32,7 +32,7 @@ for d in range(D):
             else: t=C.TGT_WEEKDAY; cap=C.CAP_WEEKDAY; a=W['under_weekday']; o=W['over_weekday']
         else:
             if c=='N': t=(C.SAT_NIGHT if d in SATN else 0) if w==5 else C.SUN_NIGHT
-            else: t=1 if date[d]<C.WEEKEND_TWO_FROM else 2
+            else: t=1 if (date[d]<C.WEEKEND_TWO_FROM or date[d] in getattr(C,'WEEKEND_ONE',())) else 2
             cap=t; a=W['under_weekend']; o=W['over_weekend']
         TGT[k,d]=t;CAP[k,d]=cap;W1[k,d]=a;WO[k,d]=o
 # Viernes y domingo noche: si alguien del turno de noche tiene vacaciones esa semana, basta con 2 y 1
