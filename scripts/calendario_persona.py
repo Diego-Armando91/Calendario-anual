@@ -19,7 +19,7 @@ i0=CM.IDX[who]; code_lbl=[k for k in CM.summ][i0].split('(')[1].strip(')')
 nice=who.title().replace('Diego Armando','Diego')
 SPECIAL=CM.SPECIAL
 FEST_LAB={dt.date(2027,1,29),dt.date(2027,3,5),dt.date(2027,4,23),dt.date(2027,5,1),dt.date(2027,8,15)}
-KIND={'M':'M','MS':'MW','MD':'MW','C':'M','T':'T','TS':'TW','TD':'TW','N':'N','NV':'N','NS':'NS'}
+KIND={'M':'M','MS':'MW','MD':'MW','C':'C','T':'T','TS':'TW','TD':'TW','N':'N','NV':'N','NS':'NS'}
 D={}; hrs=0
 if FROM_XLSX:
     _wb=openpyxl.load_workbook(sys.argv[1]); _ws=_wb['Rotación anual']
@@ -53,11 +53,11 @@ P=dict(title=f'{who} ({code_lbl})',tt=f'{nice} ({code_lbl})'+(f' · {TAG}' if TA
 n=sum(1 for i in D.values() if i['code']); sun=sum(1 for d,i in D.items() if i['code']=='N' and d.weekday()==6)
 spec=sum(1 for d in SPECIAL if D[d]['code'] in('N','NV','NS'))
 print('turnos',n,'horas',P['hours'])
-COL={'M':'A9D18E','MW':'A9D18E','T':'C9A7E0','TW':'C9A7E0','N':'E97132','NS':'F4B183','vac':'404040','azul':'00B0F0','rojo':'FF0000',None:'F2F2F2'}
-NAME={'M':'Mañana','MW':'Mañana sábado/domingo','T':'Tarde','TW':'Tarde sábado/domingo','N':'Noche','NS':'Noche sábado','vac':'Vacaciones','azul':'Día azul (sin turno)','rojo':'Festivo no laborable',None:'Libre'}
-LEGTXT={'M':'Mañana (M)','MW':'Mañana sábado/domingo (MS, MD)','T':'Tarde (T)','TW':'Tarde sábado/domingo (TS, TD)','N':'Noche (N, NV: viernes noche)','NS':'Noche sábado (NS)','vac':'Vacaciones','azul':'Día marcado en azul (sin turno)','rojo':'Día festivo no laborable','fl':'Festivo laborable'}
+COL={'C':'FFE699','M':'A9D18E','MW':'A9D18E','T':'C9A7E0','TW':'C9A7E0','N':'E97132','NS':'F4B183','vac':'404040','azul':'00B0F0','rojo':'FF0000',None:'F2F2F2'}
+NAME={'C':'Central (mañana)','M':'Mañana','MW':'Mañana sábado/domingo','T':'Tarde','TW':'Tarde sábado/domingo','N':'Noche','NS':'Noche sábado','vac':'Vacaciones','azul':'Día azul (sin turno)','rojo':'Festivo no laborable',None:'Libre'}
+LEGTXT={'C':'Central de mañana (C)','M':'Mañana (M)','MW':'Mañana sábado/domingo (MS, MD)','T':'Tarde (T)','TW':'Tarde sábado/domingo (TS, TD)','N':'Noche (N, NV: viernes noche)','NS':'Noche sábado (NS)','vac':'Vacaciones','azul':'Día marcado en azul (sin turno)','rojo':'Día festivo no laborable','fl':'Festivo laborable'}
 used=Counter(i['kind'] for i in D.values())
-order=[k for k in ('M','MW','T','TW','N','NS','vac','azul','rojo') if used[k]]+['fl']
+order=[k for k in ('C','M','MW','T','TW','N','NS','vac','azul','rojo') if used[k]]+['fl']
 MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
 YEL,RED='FFFF00','C00000'
@@ -97,7 +97,7 @@ for d in sorted(D):
 for col,w in zip('ABCDEF',(12,12,8,26,6,20)): wd.column_dimensions[col].width=w
 wd.freeze_panes='A2'
 wr=wb.create_sheet('Resumen'); wr['A1']=f'RESUMEN 2027 — {P["title"]}'; wr['A1'].font=Font(bold=True,size=14)
-turn=[k for k in ('M','MW','T','TW','N','NS') if used[k]]
+turn=[k for k in ('C','M','MW','T','TW','N','NS') if used[k]]
 hdr=['Mes']+[NAME[k] for k in turn]+['Días de turno','Vacaciones (días)','Días azules','Festivos no laborables','Festivos laborables']
 for i,h in enumerate(hdr): c=wr.cell(3,1+i,h); c.font=Font(bold=True); c.alignment=Alignment(wrap_text=True,horizontal='center')
 nt=len(turn)
