@@ -14,7 +14,7 @@ W=dict(C.W)
 W.setdefault('night_run6', 20)
 ap=argparse.ArgumentParser(); ap.add_argument('--inicio',default=None); ap.add_argument('--minutos',type=float,default=20)
 ap.add_argument('--salida',default='propuesta_cpsat.csv'); ap.add_argument('--hilos',type=int,default=8)
-ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1); ap.add_argument('--mantener-equidad',action='store_true'); ap.add_argument('--coste-cambio',type=int,default=400)
+ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1); ap.add_argument('--mantener-equidad',default=None,help='CSV de referencia: cada persona queda a ±EQUIDAD_TOL de sus sábados, viernes, sábados y domingos noche'); ap.add_argument('--coste-cambio',type=int,default=400)
 a=ap.parse_args()
 role=M.role; A2=M.avail2; ISDAY=M.ISDAY
 m=cp_model.CpModel(); obj=[]
@@ -131,7 +131,7 @@ for i in range(P):
                 m.Add(sum(win)<=lim)
 # ---------- mantener la equidad de la versión de partida
 if a.mantener_equidad:
-    x0e=load_solution(a.inicio)
+    x0e=load_solution(a.mantener_equidad)
     def cnt(i,kind,v):
         out=[]
         for d in range(D):
