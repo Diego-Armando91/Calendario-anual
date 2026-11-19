@@ -85,7 +85,7 @@ Turno normal, 8 h. **Domingo noche y noches especiales, 7 h.** Horario de Diego:
 | — | `model.py` | Modelo MILP con `scipy.optimize.milp` (HiGHS). `x[i,d]=1` si la persona i trabaja el día d en el turno de su semana. Las reglas duras son restricciones; las blandas, holguras con peso (`config.W`) |
 | 3 | `solve.py` | Solución inicial por horizonte rodante, o a partir de un CSV. Después LNS: libera un grupo (noche / mañana / tarde) durante 9 semanas, deja el resto fijo y acepta si mejora |
 | 4 | `evaluate.py` | Métricas frente al cuadrante actual: descansos de 1 día, rachas, semanas de 6 días, fines de semana seguidos, tandas de noche, viernes y domingo noche, semanas bajo el mínimo, horas y violaciones duras |
-| 5 | `export_excel.py` | Excel de la propuesta (formato "Rotación anual" y hojas de resumen) |
+| 5 | `export_excel.py` | Excel **editable** de la propuesta: las hojas de resumen son fórmulas sobre "Propuesta anual" (V = vacaciones) |
 | 6 | `export_image.py` | Imagen comparativa con el cuadrante actual |
 | 7 | `calendario_persona.py` | Calendario de una persona (PNG + Excel) con la leyenda de Diego |
 

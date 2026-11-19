@@ -20,7 +20,7 @@ for i,p in enumerate(people):
     for d in range(D):
         v=ws.cell(rows[p],col0+d).value
         v=v.strip().upper() if isinstance(v,str) else ''
-        if v:
+        if v and v!='V':
             if v not in CLm: raros.append((p,str(date[d]),v)); continue
             code[i,d]=CLm[v]; x[i,d]=1
 base=load_solution(sys.argv[2]) if len(sys.argv)>2 else None
