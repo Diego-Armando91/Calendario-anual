@@ -48,6 +48,7 @@ for d in range(D):
     if date[d] in SPECIAL: avail2[:,d]&=(role[:,d]=='N')
     if wd[d]==5 and d not in SATN: avail2[:,d]&=(role[:,d]!='N')
     if date[d] in C.NIGHT_OFF: avail2[:,d]&=(role[:,d]!='N')
+    avail2[:,d]&=~ROJO_PINTAR[:,d]   # días rojos de cada persona (revisados por Diego): no se trabajan
     if date[d] in C.DAY_OFF: avail2[:,d]&=(role[:,d]=='N')
 FORCED=np.zeros((P,D),bool)
 for _f,_m in C.FIXED.items():

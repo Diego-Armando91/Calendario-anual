@@ -99,6 +99,7 @@ def hard_violations(x):
             if x[i,d-1] and x[i,d] and ((a=='N' and b in 'MT') or (a=='T' and b=='M')): bad.append((people[i],'cambio de turno sin descanso',str(date[d])))
         for d in range(D):
             if x[i,d] and (vac[i,d] or closed[d]): bad.append((people[i],'trabaja en vacaciones/cierre',str(date[d])))
+            if x[i,d] and ROJO_PINTAR[i,d] and not closed[d]: bad.append((people[i],'trabaja en día rojo',str(date[d])))
             if x[i,d] and role[i,d]=='N' and 0<d<D-1 and not ROJO[i,d-1] and not ROJO[i,d+1] and not (x[i,d-1] and role[i,d-1]=='N') and not (x[i,d+1] and role[i,d+1]=='N'): bad.append((people[i],'noche suelta',str(date[d])))
             if x[i,d] and role[i,d]=='N' and date[d] in C.NIGHT_OFF: bad.append((people[i],'noche antes de festivo',str(date[d])))
             if x[i,d] and role[i,d]!='N' and date[d] in C.DAY_OFF: bad.append((people[i],'mañana/tarde en festivo',str(date[d])))

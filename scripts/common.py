@@ -28,7 +28,14 @@ CLOSED=C.CLOSED; SPECIAL=C.SPECIAL
 closed=np.array([d in CLOSED for d in date])
 avail=(~vac)&(~closed[None,:])
 # Días rojos (festivos no laborables / cierres): solo ahí se puede romper la regla de noches mínimas
-ROJO=np.array([[fl[p][i]=='FFFF0000' for i in range(D)] for p in people])|closed[None,:]
+_RJ=os.path.join(DATA,'rojos.json')   # rojos revisados por Diego (solo festivos no laborables y cierres reales)
+if os.path.exists(_RJ):
+    ROJO=np.zeros((P,D),bool)
+    for _n,_d in json.load(open(_RJ)): ROJO[people.index(_n),(dt.date.fromisoformat(_d)-C.YEAR_START).days]=True
+    ROJO|=closed[None,:]
+else:
+    ROJO=np.array([[fl[p][i]=='FFFF0000' for i in range(D)] for p in people])|closed[None,:]
+ROJO_PINTAR=ROJO.copy()   # lo que se pinta en rojo en Excel y calendarios
 for _x in getattr(C,'NIGHT_OFF',()): ROJO[:,(_x-C.YEAR_START).days]=True
 SATN={d for d in range(D) if wd[d]==5 and any(a<=date[d]<=b for a,b in C.SAT_NIGHT_PERIODS)}
 JA=np.array([{k.split(' (')[0]:v for k,v in summ.items()}[n]['ja'] for n in people],float)

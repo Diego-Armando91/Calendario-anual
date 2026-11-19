@@ -58,7 +58,7 @@ for i,n in enumerate(people):
         c=ws.cell(r,C0+d); c.font=Font(size=7); c.alignment=Alignment(horizontal='center'); c.border=BOX
         if X[i,d]: c.value=code_of(i,d)
         elif vac[i,d]: c.value='V'
-        elif closed[d] or fl[n][d]=='FFFF0000': c.fill=PatternFill('solid',fgColor='FF0000')
+        elif ROJO_PINTAR[i,d]: c.fill=PatternFill('solid',fgColor='FF0000')
 ws.column_dimensions['A'].width=16; ws.column_dimensions['B'].width=5; ws.column_dimensions['C'].width=5
 for d in range(D): ws.column_dimensions[col(d)].width=3.4
 ws.freeze_panes=ws.cell(R0,C0)

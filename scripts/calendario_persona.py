@@ -26,7 +26,7 @@ for d in range(CM.D):
         hrs+=7 if (r=='N' and (w==6 or dd in SPECIAL)) else 8
     if CM.vac[i0,d]: k='vac'
     elif v: k=KIND[v]
-    elif CM.closed[d] or CM.fl[CM.people[i0]][d]=='FFFF0000': k='rojo'
+    elif CM.ROJO_PINTAR[i0,d]: k='rojo'
     else: k=None
     D[dd]=dict(code=v,kind=k,fest_lab=dd in FEST_LAB and k!='rojo')
 P=dict(title=f'{who} ({code_lbl})',tt=f'{nice} ({code_lbl})'+(f' · {TAG}' if TAG else ''),hours=hrs,sab=sum(1 for dd,i in D.items() if dd.weekday()==5 and i['code']),ja=int(CM.JA[i0]),out=f'{nice.replace(" ","_")}_{TAG or "propuesta"}')

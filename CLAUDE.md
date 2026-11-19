@@ -34,7 +34,7 @@ Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión act
 - **Rellenos:**
   - negro (color de tema 1) = **vacaciones**
   - `FF00B0F0` azul = día "azul" (**no obligatorio**; mejor cubrir los descansos)
-  - `FFFF0000` rojo = festivo
+  - `FFFF0000` rojo = festivo. **Ojo:** en el original hay rojos que no son festivos (11 feb, 15 ene, bloques de Chema, 20-22 dic…). Diego los limpió: los rojos válidos están en `data/rojos.json` (se pintan en rojo, no se trabajan y son la única excepción a la regla de noches sueltas).
 - **Resumen por persona:** filas 26–40.
   - Columnas: fines de semana, sábados, horas totales y **JA (jornada anual)** en la columna G.
   - JA: 1664 h en M1, M4, N1 y N5; 1686 h en los de día; 1638 h en N2–N4.
