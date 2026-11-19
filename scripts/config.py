@@ -62,3 +62,12 @@ MIN_NIGHT_RUN=3
 FRI_NIGHT_VAC=2; SUN_NIGHT_VAC=1
 # Fines de semana de mañana/tarde con 1 sola persona aunque sea después del 4 de septiembre
 WEEKEND_ONE={D(2027,12,11),D(2027,12,12),D(2027,12,18),D(2027,12,19)}
+# Fines de semana seguidos (sábado o domingo trabajado): máximo 2 seguidos, duro para día y rotativos;
+# para los de noche fija se penaliza (peso W['three_weekends_night']).
+MAX_FINDES_SEGUIDOS=2
+# Mantener la equidad de la versión de partida (--mantener-equidad): cada persona queda a ±1 de lo que tenía en
+# sábados de mañana/tarde (SAB), viernes noche (NV), sábado noche (NS) y domingo noche (DN), salvo estas excepciones
+# (rango relativo a lo que tenía): a Diego y a Armando no les importa hacer más sábados noche; Rubén S, menos domingos noche.
+EQUIDAD_TOL=1
+EQUIDAD_EXC={('DIEGO ARMANDO','NS'):(-1,4),('ARMANDO','NS'):(-1,4),('RUBEN S','DN'):(-8,-3),
+             ('ARMANDO','DN'):(-1,3),('JUANMA V','DN'):(-1,3),('ESTHER','DN'):(-1,2),('DAVID P','DN'):(-1,2),('LORENA','DN'):(-1,2),('DIEGO ARMANDO','DN'):(-1,2)}

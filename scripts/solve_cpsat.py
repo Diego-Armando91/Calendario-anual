@@ -14,7 +14,7 @@ W=dict(C.W)
 W.setdefault('night_run6', 20)
 ap=argparse.ArgumentParser(); ap.add_argument('--inicio',default=None); ap.add_argument('--minutos',type=float,default=20)
 ap.add_argument('--salida',default='propuesta_cpsat.csv'); ap.add_argument('--hilos',type=int,default=8)
-ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1)
+ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1); ap.add_argument('--mantener-equidad',action='store_true'); ap.add_argument('--coste-cambio',type=int,default=400)
 a=ap.parse_args()
 role=M.role; A2=M.avail2; ISDAY=M.ISDAY
 m=cp_model.CpModel(); obj=[]
@@ -45,7 +45,7 @@ for i in range(P):
     if T(i,range(D)):
         hrs=sum(int(M.HRS[i,d])*x[i][d] for d in range(D) if A2[i,d])
         if a.libre:   # celdas fijas trabajadas aunque el modelo no las permita (p. ej. en vacaciones): cuentan horas
-            x0_=load_solution(a.inicio); hrs=hrs+int(sum(M.HRS[i,d] for d in range(D) if not A2[i,d] and x0_[i,d]))
+            x0_=load_solution(a.inicio); hrs=hrs+int(sum(M.HRS[i,d] for d in range(D) if not A2[i,d] and x0_[i,d] and not FREE[i,d]))
         m.Add(hrs>=int(JA[i])); m.Add(hrs<=int(JA[i])+C.HOURS_TOL)
 # ---------- noches: al menos MIN_NIGHT_RUN seguidas (solo se rompe junto a un día rojo o al principio/fin del año)
 NIGHT=lambda i,d: x[i][d] if (0<=d<D and role[i,d]=='N') else 0
@@ -108,6 +108,44 @@ for i in range(P):
         if a.limites_duros: m.Add(sum(lst)<=lim)
         else:
             e=m.NewIntVar(0,len(lst),''); m.Add(e>=sum(lst)-lim); obj.append(W.get('limit_excess',400)*e)
+# ---------- fines de semana seguidos (sábado o domingo trabajado)
+WEND={}
+for i in range(P):
+    ks=[]
+    for d in range(D):
+        if wd[d]!=5: continue
+        ds=[k for k in (d,d+1) if k<D and A2[i,k]]
+        if not ds: ks.append(0); continue
+        w=B()
+        for k in ds: m.Add(w>=x[i][k])
+        m.Add(w<=sum(x[i][k] for k in ds)); ks.append(w)
+    WEND[i]=ks
+    lim=getattr(C,'MAX_FINDES_SEGUIDOS',None)
+    if lim:
+        for k in range(len(ks)-lim):
+            win=ks[k:k+lim+1]
+            if all(isinstance(v,int) for v in win): continue
+            if people[i] in C.G_NIGHT:
+                t=B(); m.Add(sum(win)-lim<=t); obj.append(W.get('three_weekends_night',150)*t)
+            elif T(i,[d for d in range(D) if wd[d] in (5,6)]):
+                m.Add(sum(win)<=lim)
+# ---------- mantener la equidad de la versión de partida
+if a.mantener_equidad:
+    x0e=load_solution(a.inicio)
+    def cnt(i,kind,v):
+        out=[]
+        for d in range(D):
+            if not A2[i,d] and v is not x0e: continue
+            r=role[i,d]; w_=wd[d]
+            ok=(kind=='SAB' and w_==5 and r in 'MT') or (kind=='NV' and w_==4 and r=='N') or (kind=='NS' and w_==5 and r=='N') or (kind=='DN' and w_==6 and r=='N')
+            if ok: out.append(v[i][d] if v is x else int(v[i,d]))
+        return out
+    for i in range(P):
+        for kind in ('SAB','NV','NS','DN'):
+            c0=sum(cnt(i,kind,x0e)); vs=cnt(i,kind,x)
+            if c0==0 and not vs: continue
+            lo,hi=C.EQUIDAD_EXC.get((people[i],kind),(-C.EQUIDAD_TOL,C.EQUIDAD_TOL))
+            e=sum(vs); m.Add(e>=max(0,c0+lo)); m.Add(e<=c0+hi)
 # ---------- equidad
 def spread(exprs,weight):
     mx=m.NewIntVar(0,400,''); mn=m.NewIntVar(0,400,'')
@@ -143,7 +181,7 @@ if a.libre:
     x0=load_solution(a.inicio)
     for i in range(P):          # cambiar lo mínimo respecto al punto de partida
         for d in range(D):
-            if FREE[i,d] and A2[i,d]: obj.append(W.get('cambio',400)*(x[i][d] if x0[i,d]==0 else 1-x[i][d]))
+            if FREE[i,d] and A2[i,d]: obj.append(W.get('cambio',int(getattr(a,'coste_cambio',400)))*(x[i][d] if x0[i,d]==0 else 1-x[i][d]))
     m.Minimize(sum(obj))
     nfix=0
     for i in range(P):
