@@ -47,5 +47,5 @@ HOURS_TOL=8   # horas anuales entre JA y JA+8
 # Fines de semana antes de vacaciones libres (data/libres_antes_vacaciones.json)
 LIBRES_ANTES_VACACIONES=True
 # Límites por persona y año (CP-SAT)
-MAX_RACHAS6=6        # rachas de 6 días seguidos
+MAX_RACHAS6=4        # rachas de 6 días seguidos
 MAX_DESCANSOS_1=3    # descansos de un solo día
