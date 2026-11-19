@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+work/_*.py
+work/log_*.txt
+work/prueba_*.csv
+work/roles_orig.json
+
+# Datos personales del equipo (nombres, vacaciones, turnos): fuera del repo publico hasta confirmar
+data/
+work/
+salidas/
