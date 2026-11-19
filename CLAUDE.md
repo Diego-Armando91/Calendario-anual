@@ -15,7 +15,7 @@ Diego ha visto cuatro versiones (v1–v4) y ha ido añadiendo reglas. La v4 le g
 - a Armando, una en enero
 - a Rubén, dos entre enero y febrero
 
-Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v9**.
+Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v11** (`work/propuesta_v11.csv`, hecha desde la v10 editada por Diego).
 
 ## 2. Datos (`data/`)
 
@@ -137,7 +137,8 @@ python calendario_persona.py propuesta_v5.csv "DIEGO ARMANDO" v5
     - 5 días todas las semanas no cabe. Lo que sale es unas 25 semanas de 5, unas 17 de 4 y las de festivo de 3.
     - En `config` el mínimo es 4 (3 con festivo, proporcional si hay vacaciones). Explícaselo a Diego si pregunta por qué no son todas de 5.
 13. Noches lo más seguidas posible: tandas continuas de 4 o 5 noches, que pueden cruzar de una semana a otra (por ejemplo, de jueves a martes, o de domingo a jueves). Que no se partan todas las semanas.
-14. Fines de semana y sábados noche alternos, como máximo 2 al mes (3 solo si las vacaciones obligan). Se permiten **dos seguidos de vez en cuando, pero no a menudo**.
+14. **v11: como mucho 2 fines de semana seguidos** (duro para día y rotativos; penalizado para noche fija, `config.MAX_FINDES_SEGUIDOS`). Al reoptimizar se mantiene ±1 el reparto de sábados, viernes, sábados y domingos noche de la versión de Diego (`--mantener-equidad`); Diego y Armando pueden hacer más sábados noche y Rubén S menos domingos noche (`config.EQUIDAD_EXC`).
+    Fines de semana y sábados noche alternos, como máximo 2 al mes (3 solo si las vacaciones obligan). Se permiten **dos seguidos de vez en cuando, pero no a menudo**.
 15. Alguna semana de 6 días está permitida, pero no puede ser lo normal.
     - **v7: como mucho 4 rachas de 6 días seguidos por persona y año, crucen o no de semana** (`config.MAX_RACHAS6`).
     - **v7: como mucho 3 descansos de un solo día por persona y año** (`config.MAX_DESCANSOS_1`).
