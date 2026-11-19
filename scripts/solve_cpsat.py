@@ -14,7 +14,7 @@ W=dict(C.W)
 W.setdefault('night_run6', 20)
 ap=argparse.ArgumentParser(); ap.add_argument('--inicio',default=None); ap.add_argument('--minutos',type=float,default=20)
 ap.add_argument('--salida',default='propuesta_cpsat.csv'); ap.add_argument('--hilos',type=int,default=8)
-ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1); ap.add_argument('--mantener-equidad',default=None,help='CSV de referencia: cada persona queda a ±EQUIDAD_TOL de sus sábados, viernes, sábados y domingos noche'); ap.add_argument('--coste-cambio',type=int,default=400)
+ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1); ap.add_argument('--mantener-equidad',default=None,help='CSV de referencia: cada persona queda a ±EQUIDAD_TOL de sus sábados, viernes, sábados y domingos noche'); ap.add_argument('--coste-cambio',type=int,default=400); ap.add_argument('--findes-duros',default=None,help='fechas (AAAA-MM-DD,...) excluidas; el resto de fines de semana de mañana/tarde con cobertura obligatoria')
 a=ap.parse_args()
 role=M.role; A2=M.avail2; ISDAY=M.ISDAY
 m=cp_model.CpModel(); obj=[]
@@ -64,6 +64,13 @@ for _dd in getattr(C,'WEEKEND_ONE',()):
     for c in 'MT':
         ps=[x[i][d] for i in range(P) if role[i,d]==c and A2[i,d]]
         if ps: m.Add(sum(ps)<=1)
+if a.findes_duros is not None:
+    _ex={dt.date.fromisoformat(t) for t in a.findes_duros.split(',') if t}
+    for d in range(D):
+        if wd[d]<5 or date[d] in _ex: continue
+        for k,c in ((0,'M'),(1,'T')):
+            t=int(M.TGT[k,d]); ps=[x[i][d] for i in range(P) if role[i,d]==c and A2[i,d]]
+            if t>0 and ps: m.Add(sum(ps)>=min(t,len(ps)))
 # ---------- cobertura
 cl={'M':0,'T':1,'N':2}
 for c in 'MTN':
