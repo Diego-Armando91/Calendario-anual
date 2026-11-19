@@ -11,14 +11,34 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from collections import Counter
 import common as CM
-role=CM.load_roles(); x=CM.load_solution(sys.argv[1]); who=sys.argv[2]; TAG=sys.argv[3] if len(sys.argv)>3 else ''
+FROM_XLSX=sys.argv[1].lower().endswith('.xlsx')   # calendario desde un Excel con hoja 'Rotación anual' (p. ej. el revisado por el encargado)
+who=sys.argv[2]; TAG=sys.argv[3] if len(sys.argv)>3 else ''
+if not FROM_XLSX: role=CM.load_roles(); x=CM.load_solution(sys.argv[1])
+PREFIX='Calendario 2027' if FROM_XLSX else 'Propuesta 2027'
 i0=CM.IDX[who]; code_lbl=[k for k in CM.summ][i0].split('(')[1].strip(')')
 nice=who.title().replace('Diego Armando','Diego')
 SPECIAL=CM.SPECIAL
 FEST_LAB={dt.date(2027,1,29),dt.date(2027,3,5),dt.date(2027,4,23),dt.date(2027,5,1),dt.date(2027,8,15)}
 KIND={'M':'M','MS':'MW','MD':'MW','C':'M','T':'T','TS':'TW','TD':'TW','N':'N','NV':'N','NS':'NS'}
 D={}; hrs=0
-for d in range(CM.D):
+if FROM_XLSX:
+    _wb=openpyxl.load_workbook(sys.argv[1]); _ws=_wb['Rotación anual']
+    _r=[r for r in range(4,19) if str(_ws.cell(r,1).value).strip().upper()==who][0]
+    for d in range(CM.D):
+        assert _ws.cell(2,4+d).value=='LMXJVSD'[CM.wd[d]]
+        c=_ws.cell(_r,4+d); v=c.value.strip().upper() if isinstance(c.value,str) and c.value.strip() else None
+        f=c.fill; fc=None
+        if f is not None and f.fill_type=='solid': fc=f.fgColor.rgb if f.fgColor.type=='rgb' else f'theme{f.fgColor.theme}'
+        dd=CM.date[d]; w=CM.wd[d]
+        if v in KIND: hrs+=7 if (v in ('N','NV','NS') and (w==6 or dd in SPECIAL)) else 8
+        else: v=None
+        if v: k=KIND[v]
+        elif fc=='theme1': k='vac'
+        elif fc=='FFFF0000' or CM.closed[d]: k='rojo'
+        elif fc=='FF00B0F0': k='azul'
+        else: k=None
+        D[dd]=dict(code=v,kind=k,fest_lab=dd in FEST_LAB and k!='rojo')
+for d in ([] if FROM_XLSX else range(CM.D)):
     dd=CM.date[d]; w=CM.wd[d]; v=None
     if x[i0,d]:
         r=role[i0,d]
@@ -42,7 +62,7 @@ MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septie
 DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
 YEL,RED='FFFF00','C00000'
 wb=openpyxl.Workbook(); ws=wb.active; ws.title='Calendario 2027'
-ws['A1']=f'PROPUESTA DE CUADRANTE 2027 — {P["title"]}'; ws['A1'].font=Font(bold=True,size=16)
+ws['A1']=f'{PREFIX.upper()} — {P["title"]}'; ws['A1'].font=Font(bold=True,size=16)
 ws['A2']='Propuesta de cuadrante 2027 (optimizada): mismas vacaciones que el cuadrante original, misma leyenda que los calendarios anteriores.'; ws['A2'].font=Font(italic=True,size=9)
 def box(c,s): return Border(left=s,right=s,top=s,bottom=s)
 for i,k in enumerate(order):
@@ -89,7 +109,7 @@ for m in range(1,13):
     wr.cell(r,6+nt,f'=COUNTIFS(Detalle!$E:$E,{m},Detalle!$F:$F,"Festivo laborable")')
 wr.cell(16,1,'TOTAL AÑO').font=Font(bold=True)
 for c in range(2,7+nt): wr.cell(16,c,f'=SUM({get_column_letter(c)}4:{get_column_letter(c)}15)').font=Font(bold=True)
-wr['A18']=f'Propuesta ({P["title"]}): {P["sab"]} sábados trabajados, {P["hours"]:,} horas previstas, jornada anual {P["ja"]:,} h.'.replace(',','.')
+wr['A18']=f'{PREFIX} ({P["title"]}): {P["sab"]} sábados trabajados, {P["hours"]:,} horas previstas, jornada anual {P["ja"]:,} h.'.replace(',','.')
 wr.column_dimensions['A'].width=14
 for c in range(2,8+nt): wr.column_dimensions[get_column_letter(c)].width=16
 wb.save(os.path.join(CM.OUT,f'Calendario_Laboral_2027_{P["out"]}.xlsx'))
@@ -108,7 +128,7 @@ for m in range(1,13):
             if i['code']: ax.text(c+.5,y+.68,i['code'],ha='center',va='center',fontsize=10.5,color=tc)
             if i['kind'] in('MW','TW'): ax.add_patch(Rectangle((c+.04,y+.04),.92,.92,facecolor='none',edgecolor='#'+YEL,linewidth=3.5))
             elif i['fest_lab']: ax.add_patch(Rectangle((c+.04,y+.04),.92,.92,facecolor='none',edgecolor='#'+RED,linewidth=3.5))
-fig.suptitle(f'Propuesta 2027 — {P["tt"]}',fontsize=28,fontweight='bold',y=0.975)
+fig.suptitle(f'{PREFIX} — {P["tt"]}',fontsize=28,fontweight='bold',y=0.975)
 h=[]
 for k in order:
     if k=='fl': h.append(Rectangle((0,0),1,1,facecolor='white',edgecolor='#'+RED,linewidth=3,label=LEGTXT[k]))
@@ -116,6 +136,6 @@ for k in order:
     else: h.append(Rectangle((0,0),1,1,facecolor='#'+COL[k],edgecolor='#999',label=LEGTXT[k]))
 fig.legend(handles=h,loc='lower center',ncol=4,fontsize=13,frameon=False,bbox_to_anchor=(0.5,0.035))
 work=sum(used[k] for k in turn)
-fig.text(0.5,0.012,f'{work} días de turno · {used["vac"]} días de vacaciones · {used["rojo"]} festivos y cierres · {P["hours"]:,} h previstas (propuesta)'.replace(',','.'),ha='center',fontsize=12,color='#444')
+fig.text(0.5,0.012,f'{work} días de turno · {used["vac"]} días de vacaciones · {used["rojo"]} festivos y cierres · {P["hours"]:,} h '.replace(',','.') + ('(revisado)' if FROM_XLSX else 'previstas (propuesta)'),ha='center',fontsize=12,color='#444')
 plt.savefig(os.path.join(CM.OUT,f'Calendario_2027_{P["out"]}.png'),dpi=130,facecolor='white')
 print(used)
