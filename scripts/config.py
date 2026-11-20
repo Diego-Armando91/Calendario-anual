@@ -69,7 +69,7 @@ MAX_FINDES_SEGUIDOS=2
 # sábados de mañana/tarde (SAB), viernes noche (NV), sábado noche (NS) y domingo noche (DN), salvo estas excepciones
 # (rango relativo a lo que tenía): a Diego y a Armando no les importa hacer más sábados noche; Rubén S, menos domingos noche.
 EQUIDAD_TOL=1
-EQUIDAD_EXC={('DIEGO ARMANDO','NS'):(-1,4),('ARMANDO','NS'):(-1,4),('RUBEN S','DN'):(-8,-3),
+EQUIDAD_EXC={('DIEGO ARMANDO','NS'):(-1,4),('ARMANDO','NS'):(-1,4),('RUBEN S','DN'):(-2,1),
              ('ARMANDO','DN'):(-1,3),('JUANMA V','DN'):(-1,3),('ESTHER','DN'):(-1,2),('DAVID P','DN'):(-1,2),('LORENA','DN'):(-1,2),('DIEGO ARMANDO','DN'):(-1,2)}
 # Mínimo duro de personas entre semana (lunes-viernes laborables): mañana sin contar la central (Juanma entra a las 10:00) y tarde
 MIN_SEMANA_M_SIN_CENTRAL=2
@@ -78,3 +78,7 @@ CENTRAL='JUANMA'
 # Cambios de turno de semana completa (lunes de la semana -> persona -> turno). Se usan para rebajar la tarde
 # y reforzar la mañana en semanas en que, sin la central, solo quedarían 2 de mañana.
 ROLE_OVERRIDE={D(2027,1,25):{'DENIA':'M'}, D(2027,3,29):{'DENIA':'M'}, D(2027,7,5):{'BEA':'M'}}
+# Quien trabaja el sábado noche trabaja también el domingo noche (finde entero), salvo festivos (duro)
+SAB_NOCHE_IMPLICA_DOMINGO=True
+# Verano: repartir los fines de semana (mañana/tarde y sábado noche; el domingo noche no cuenta)
+VERANO=(D(2027,5,29),D(2027,8,29)); VERANO_MAX=3

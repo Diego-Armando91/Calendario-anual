@@ -146,6 +146,28 @@ for i in range(P):
                 t=B(); m.Add(sum(win)-lim<=t); obj.append(W.get('three_weekends_night',150)*t)
             elif T(i,[d for d in range(D) if wd[d] in (5,6)]):
                 m.Add(sum(win)<=lim)
+# ---------- sábado noche => domingo noche (finde entero), salvo festivos
+if getattr(C,'SAB_NOCHE_IMPLICA_DOMINGO',False):
+    for i in range(P):
+        for d in range(D-1):
+            if wd[d]==5 and d in SATN and role[i,d]=='N' and role[i,d+1]=='N' and A2[i,d] and A2[i,d+1] and not ROJO[i,d+1] and T(i,(d,d+1)):
+                m.Add(x[i][d]<=x[i][d+1])
+# ---------- verano: fines de semana repartidos (sin dos seguidos, máx. VERANO_MAX por persona)
+if getattr(C,'VERANO',None):
+    v0=(C.VERANO[0]-start).days; v1=(C.VERANO[1]-start).days
+    for i in range(P):
+        ks=[]
+        for d in range(v0,v1):
+            if wd[d]!=5: continue
+            ds=[k for k in (d,d+1) if A2[i,k] and role[i,k] in 'MT'] + ([d] if A2[i,d] and role[i,d]=='N' else [])
+            if not ds: ks.append(0); continue
+            w=B()
+            for k in ds: m.Add(w>=x[i][k])
+            m.Add(w<=sum(x[i][k] for k in ds)); ks.append(w)
+        for k in range(len(ks)-1):
+            if isinstance(ks[k],int) or isinstance(ks[k+1],int): continue
+            t=B(); m.Add(ks[k]+ks[k+1]-1<=t); obj.append(W.get('verano_seguidos',300)*t)
+        e=m.NewIntVar(0,20,''); m.Add(e>=sum(ks)-C.VERANO_MAX); obj.append(W.get('verano_exceso',150)*e)
 # ---------- mantener la equidad de la versión de partida
 if a.mantener_equidad:
     x0e=load_solution(a.mantener_equidad)

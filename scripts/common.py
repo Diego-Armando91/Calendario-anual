@@ -23,6 +23,13 @@ if os.path.exists(_ND):
     for _n,_d in json.load(open(_ND)):
         _i=people.index(_n); _k=(dt.date.fromisoformat(_d)-C.YEAR_START).days
         LIBRES[_i,_k]=True; vac[_i,_k]=True
+# Domingos de vacaciones que Diego liberó (vuelta de vacaciones): se pueden trabajar (data/vacaciones_quitadas.json)
+_VQ=os.path.join(DATA,'vacaciones_quitadas.json')
+VAC_QUITADA=np.zeros_like(vac)
+if os.path.exists(_VQ):
+    for _n,_d in json.load(open(_VQ)):
+        _i=people.index(_n); _k=(dt.date.fromisoformat(_d)-C.YEAR_START).days
+        vac[_i,_k]=False; VAC_QUITADA[_i,_k]=True
 VAC_REAL=vac&~LIBRES   # vacaciones de verdad (sin findes libres ni días no disponibles)
 CLOSED=C.CLOSED; SPECIAL=C.SPECIAL
 closed=np.array([d in CLOSED for d in date])
@@ -44,11 +51,18 @@ def load_roles():
     role=np.empty((P,D),dtype='U1')
     for i in range(P):
         for d in range(D): role[i,d]=R['roles'][str(i)][wk(d)]
+    # domingo liberado a la vuelta de vacaciones: toma el turno de la semana siguiente (p. ej. domingo noche si vuelve de noche)
+    for _i in range(P):
+        for d in range(D-1):
+            if VAC_QUITADA[_i,d] and wd[d]==6: role[_i,d]='?'
     for _mon,_m in getattr(C,'ROLE_OVERRIDE',{}).items():
         _w=wk((_mon-C.YEAR_START).days)
         for _n,_r in _m.items():
             for d in range(D):
                 if wk(d)==_w: role[IDX[_n],d]=_r
+    for _i in range(P):
+        for d in range(D-2,-1,-1):
+            if role[_i,d]=='?': role[_i,d]=role[_i,d+1]
     return role
 def save_solution(x,name):
     import csv
