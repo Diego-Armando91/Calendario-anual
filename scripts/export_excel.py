@@ -179,7 +179,7 @@ wr.append(['Semana','Desde (lun)','Hasta (dom)']+[r_.title() for r_ in rot])
 for c in wr[1]: c.font=Font(bold=True)
 for w in range(NW):
     dd=[d for d in range(D) if wk(d)==w]
-    row=[w,date[dd[0]],date[dd[-1]]]+[str(roles_w[IDX[r_]][w]) for r_ in rot]
+    row=[w,date[dd[0]],date[dd[-1]]]+[str(role[IDX[r_],dd[0]]) for r_ in rot]
     wr.append(row); wr.cell(wr.max_row,2).number_format='dd/mm/yyyy'; wr.cell(wr.max_row,3).number_format='dd/mm/yyyy'
     for k in range(6):
         v=row[3+k]; c=wr.cell(wr.max_row,4+k); c.alignment=Alignment(horizontal='center'); c.fill=PatternFill('solid',fgColor={'M':'A9D18E','T':'C9A7E0','N':'E97132'}.get(v,'FFFFFF'))
