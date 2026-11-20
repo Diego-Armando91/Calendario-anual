@@ -14,7 +14,7 @@ W=dict(C.W)
 W.setdefault('night_run6', 20)
 ap=argparse.ArgumentParser(); ap.add_argument('--inicio',default=None); ap.add_argument('--minutos',type=float,default=20)
 ap.add_argument('--salida',default='propuesta_cpsat.csv'); ap.add_argument('--hilos',type=int,default=8)
-ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1); ap.add_argument('--mantener-equidad',default=None,help='CSV de referencia: cada persona queda a ±EQUIDAD_TOL de sus sábados, viernes, sábados y domingos noche'); ap.add_argument('--coste-cambio',type=int,default=400); ap.add_argument('--min-semana',action='store_true',help='mínimo duro entre semana: MIN_SEMANA_M_SIN_CENTRAL a las 7:00 y MIN_SEMANA_T de tarde'); ap.add_argument('--findes-duros',default=None,help='fechas (AAAA-MM-DD,...) excluidas; el resto de fines de semana de mañana/tarde con cobertura obligatoria')
+ap.add_argument('--minimo-duro',action='store_true'); ap.add_argument('--limites-duros',action='store_true'); ap.add_argument('--libre',default=None,help='desde,hasta,turnos (p.ej. 2027-11-29,2027-12-31,MT): solo se reoptimiza eso; el resto queda fijo al --inicio'); ap.add_argument('--semilla',type=int,default=1); ap.add_argument('--mantener-equidad',default=None,help='CSV de referencia: cada persona queda a ±EQUIDAD_TOL de sus sábados, viernes, sábados y domingos noche'); ap.add_argument('--coste-cambio',type=int,default=400); ap.add_argument('--verano-duro',action='store_true',help='en verano: sin dos findes seguidos y máx. VERANO_MAX (personal de día y rotativos)'); ap.add_argument('--min-semana',action='store_true',help='mínimo duro entre semana: MIN_SEMANA_M_SIN_CENTRAL a las 7:00 y MIN_SEMANA_T de tarde'); ap.add_argument('--findes-duros',default=None,help='fechas (AAAA-MM-DD,...) excluidas; el resto de fines de semana de mañana/tarde con cobertura obligatoria')
 a=ap.parse_args()
 role=M.role; A2=M.avail2; ISDAY=M.ISDAY
 m=cp_model.CpModel(); obj=[]
@@ -164,10 +164,13 @@ if getattr(C,'VERANO',None):
             w=B()
             for k in ds: m.Add(w>=x[i][k])
             m.Add(w<=sum(x[i][k] for k in ds)); ks.append(w)
+        duro=a.verano_duro and people[i] not in C.G_NIGHT
         for k in range(len(ks)-1):
             if isinstance(ks[k],int) or isinstance(ks[k+1],int): continue
-            t=B(); m.Add(ks[k]+ks[k+1]-1<=t); obj.append(W.get('verano_seguidos',300)*t)
-        e=m.NewIntVar(0,20,''); m.Add(e>=sum(ks)-C.VERANO_MAX); obj.append(W.get('verano_exceso',150)*e)
+            if duro: m.Add(ks[k]+ks[k+1]<=1)
+            else: t=B(); m.Add(ks[k]+ks[k+1]-1<=t); obj.append(W.get('verano_seguidos',300)*t)
+        if duro: m.Add(sum(ks)<=C.VERANO_MAX)
+        else: e=m.NewIntVar(0,20,''); m.Add(e>=sum(ks)-C.VERANO_MAX); obj.append(W.get('verano_exceso',150)*e)
 # ---------- mantener la equidad de la versión de partida
 if a.mantener_equidad:
     x0e=load_solution(a.mantener_equidad)
