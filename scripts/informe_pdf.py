@@ -186,18 +186,64 @@ for p in people:
     r=per[p]
     if r['N']: data.append([nice(p),r['NV'],r['NS'],r['DN'],', '.join(f'{L}:{n}' for L,n in sorted(r['tandas_noche'].items()))])
 story.append(tbl(data,[3*cm,1.8*cm,1.8*cm,1.8*cm,9*cm]))
-# viernes
-story.append(PageBreak()); story.append(Paragraph('Viernes trabajados por persona y turno',H2))
-data=[['Persona','Total','Mañana','Central','Tarde','Noche (NV)']]
+# viernes (sección destacada)
+FRI=[d for d in range(D) if wd[d]==4 and not closed[d]]
+GRUPOS=[('Mañana fija y central',['CHEMA','JUANMA']),('Tarde fija',['MICHEL','ALFREDO','IRENE','SOFIA']),('Rotan mañana ↔ tarde',['BEA','DENIA']),
+        ('Rotan mañana ↔ noche',['DIEGO ARMANDO','ESTHER','DAVID P','LORENA']),('Noche fija',['ARMANDO','JUANMA V','RUBEN S'])]
 for p in people:
-    r=per[p]; data.append([nice(p),r['vie']]+[len(r['vie_por'][c]) for c in 'MCTN'])
-story.append(tbl(data,[3.2*cm]+[2*cm]*5))
-story.append(Spacer(1,6)); story.append(Paragraph('Detalle de fechas',H2))
-for p in people:
+    i=IDX[p]; r=per[p]
+    r['vie_disp']=sum(1 for d in FRI if not V[i,d])
+    r['vie_libres']=[d for d in FRI if not V[i,d] and not W_[i,d]]
+    r['puentes']=[d for d in FRI if not W_[i,d] and not V[i,d] and d+2<D and not W_[i,d+1] and not W_[i,d+2]]
+    r['vie_finde']=[d for d in FRI if W_[i,d] and d+1<D and (W_[i,d+1] or (d+2<D and W_[i,d+2]))]
+story.append(PageBreak()); story.append(Paragraph('VIERNES — quién los trabaja y en qué turno',H1))
+story.append(Paragraph('Para cada persona: viernes que no está de vacaciones («disponibles»), cuántos trabaja y en qué turno, cuántos libra, '
+    'cuántos son «puente» (libra viernes, sábado y domingo) y cuántos van pegados a un fin de semana trabajado. '
+    'En cada grupo se marca en <font color="#C00000"><b>rojo</b></font> quien trabaja 3 o más viernes por encima de la media del grupo y en '
+    '<font color="#2E7D32"><b>verde</b></font> quien trabaja 3 o más por debajo.',B))
+data=[['Persona','Grupo','Disp.','Trab.','Mañana','Central','Tarde','Noche','Libres','Puentes','Pegados\na finde']]; hl=[]
+row=1
+for g,ms in GRUPOS:
+    avg=np.mean([per[p]['vie'] for p in ms])
+    for p in ms:
+        r=per[p]; data.append([nice(p),g,r['vie_disp'],r['vie'],len(r['vie_por']['M']),len(r['vie_por']['C']),len(r['vie_por']['T']),len(r['vie_por']['N']),
+                               len(r['vie_libres']),len(r['puentes']),len(r['vie_finde'])])
+        if r['vie']-avg>=3: hl.append((3,row,RED))
+        if avg-r['vie']>=3: hl.append((3,row,GRN))
+        row+=1
+story.append(tbl(data,[2.5*cm,3.6*cm,1.1*cm,1.1*cm,1.3*cm,1.3*cm,1.2*cm,1.2*cm,1.2*cm,1.3*cm,1.5*cm],fs=7.4,hl=hl))
+# gráfico apilado
+fig,ax=plt.subplots(figsize=(10,3.8)); order=[p for g,ms in GRUPOS for p in ms]; x=np.arange(len(order)); bot=np.zeros(len(order))
+for c,lab,colr in (('M','Mañana','#A9D18E'),('C','Central','#FFE699'),('T','Tarde','#C9A7E0'),('N','Noche','#E97132')):
+    v=np.array([len(per[p]['vie_por'][c]) for p in order]); ax.bar(x,v,bottom=bot,color=colr,label=lab,edgecolor='white',linewidth=.5); bot+=v
+for k,p in enumerate(order): ax.text(k,bot[k]+0.5,str(int(bot[k])),ha='center',fontsize=7.5)
+ax.set_xticks(x); ax.set_xticklabels([nice(p) for p in order],rotation=35,ha='right',fontsize=8); ax.spines[['top','right']].set_visible(False)
+ax.legend(ncol=4,fontsize=8,frameon=False,loc='upper center',bbox_to_anchor=(0.5,1.12)); ax.set_ylabel('viernes',fontsize=8)
+plt.tight_layout(); pimg=os.path.join(IMG,'viernes.png'); plt.savefig(pimg,dpi=170); plt.close()
+story.append(Spacer(1,4)); story.append(Image(pimg,width=17.5*cm,height=6.6*cm))
+story.append(Paragraph('Qué se ve y por qué',H2))
+for g,ms in GRUPOS:
+    vals={p:per[p]['vie'] for p in ms}; avg=np.mean(list(vals.values()))
+    txt=f"<b>{g}</b> (media {avg:.1f}): "+', '.join(f"{nice(p)} {v}" for p,v in sorted(vals.items(),key=lambda t:-t[1]))+'. '
+    mx=max(vals,key=vals.get); mn=min(vals,key=vals.get)
+    if vals[mx]-vals[mn]>=3:
+        rm,rn=per[mx],per[mn]
+        why=[]
+        if rm['vie_disp']>rn['vie_disp']: why.append(f"{nice(mx)} tiene {rm['vie_disp']-rn['vie_disp']} viernes más disponibles (menos vacaciones en viernes)")
+        if len(rm['vie_por']['N'])-len(rn['vie_por']['N'])>=3: why.append(f"{nice(mx)} hace {len(rm['vie_por']['N'])} viernes noche frente a {len(rn['vie_por']['N'])}: tiene más semanas de noche")
+        if len(rn['puentes'])>len(rm['puentes']): why.append(f"{nice(mn)} tiene {len(rn['puentes'])} puentes (viernes+finde libres) frente a {len(rm['puentes'])}")
+        if len(rn['vie_libres'])>len(rm['vie_libres']): why.append(f"{nice(mn)} libra {len(rn['vie_libres'])} viernes, {nice(mx)} {len(rm['vie_libres'])}")
+        txt+=f"La diferencia entre {nice(mx)} y {nice(mn)} es de {vals[mx]-vals[mn]}. "+('Motivos: '+'; '.join(why)+'.' if why else '')
+    story.append(Paragraph('• '+txt,B))
+story.append(Paragraph('Nota: el personal de noche fija trabaja menos viernes en total porque su viernes es casi siempre NV y lo reparten entre 3 personas más los rotativos; '
+    'el personal de día trabaja casi todos los viernes disponibles porque el viernes de día lleva cobertura de 3 personas.',SM))
+story.append(Paragraph('Fechas de cada viernes trabajado',H2))
+for p in order:
     r=per[p]; parts=[]
     for c,lab in (('M','Mañana'),('C','Central'),('T','Tarde'),('N','Noche')):
         if r['vie_por'][c]: parts.append(f"<b>{lab} ({len(r['vie_por'][c])}):</b> "+', '.join(f(d) for d in r['vie_por'][c]))
-    story.append(Paragraph(f"<b>{nice(p)}</b> — {r['vie']} viernes. "+' · '.join(parts),SM))
+    lib=f" · <b>Libres ({len(r['vie_libres'])}):</b> "+', '.join(f(d) for d in r['vie_libres']) if r['vie_libres'] else ''
+    story.append(Paragraph(f"<b>{nice(p)}</b> — {r['vie']} viernes. "+' · '.join(parts)+lib,SM))
 # cobertura
 story.append(PageBreak()); story.append(Paragraph('Cobertura',H2))
 cl=[f"<b>Viernes noche</b> (personas: nº de viernes): "+', '.join(f'{k}: {v}' for k,v in sorted(cov['vie'].items()))+'. Por debajo del objetivo: '+(', '.join(f"{f(d)} ({n} de {t})" for d,n,t in cov['vie_bajo']) or 'ninguno')+'.',
@@ -218,6 +264,66 @@ if mz:
         dd=[d for d in range(D) if wk(d)==w]; return f"{f(dd[0])}"
     story.append(Paragraph('<b>Semanas con dos turnos distintos</b> (mañana/tarde/noche mezclados en la misma semana): '+'; '.join(f"{nice(p)} sem. del {wr2(w)}" for p,w in mz)+'.',B))
 
+# ---------- descansos de 1 día: motivos
+if BASE: xb_=load_solution(BASE)
+def motivo(i,d):
+    p=people[i]; prev,nxt=S[i,d-1],S[i,d+1]; m=[]
+    if prev!=nxt and not (prev in 'MC' and nxt in 'MC'): m.append('cambio de turno (%s→%s)'%(prev,nxt))
+    if (wd[d]==0 and (W_[i,d-1] or W_[i,d-2])) or (wd[d]==4 and d+1<D and W_[i,d+1]): m.append('pegado a un fin de semana trabajado')
+    if p=='JUANMA' and any(LIBRES[i,k] for k in range(max(0,d-3),min(D,d+4))): m.append('junto a un finde con su hijo (no disponible)')
+    if any(ROJO[i,k] or closed[k] for k in (d-1,d+1) if 0<=k<D): m.append('junto a festivo/cierre')
+    # habría hecho 7 o más seguidos
+    L=1; k=d-1
+    while k>=0 and W_[i,k]: L+=1; k-=1
+    k=d+1
+    while k<D and W_[i,k]: L+=1; k+=1
+    if L>=7: m.append('si no, %d días seguidos'%L)
+    if BASE and (bool(xb_[i,d])!=bool(W_[i,d]) or bool(xb_[i,d-1])!=bool(W_[i,d-1]) or bool(xb_[i,d+1])!=bool(W_[i,d+1])): m.append('cambio a mano')
+    return m or ['reparto de horas / cobertura']
+CATS=['si no, ','cambio de turno','pegado a un fin de semana trabajado','junto a un finde con su hijo','junto a festivo','cambio a mano','reparto de horas']
+LAB={'si no, ':'Rompe racha\nlarga (7+)','cambio de turno':'Cambio\nde turno','pegado a un fin de semana trabajado':'Pegado a\nfinde trab.','junto a un finde con su hijo':'Finde con\nsu hijo',
+     'junto a festivo':'Junto a\nfestivo','cambio a mano':'Cambio\na mano','reparto de horas':'Horas /\ncobertura'}
+story.append(PageBreak()); story.append(Paragraph('Descansos de un solo día: cuántos y por qué',H1))
+story.append(Paragraph('Un «descanso de 1 día» es un día libre (sin vacaciones) entre dos días trabajados. Para cada uno se apuntan las causas que lo explican '
+    '(puede haber varias a la vez): <b>rompe una racha larga</b> (sin ese día libre se encadenarían 7 o más días); <b>cambio de turno</b> (de noche o tarde a mañana hace falta un día libre en medio); '
+    '<b>pegado a un fin de semana trabajado</b> (lunes después o viernes antes); <b>finde con su hijo</b> (Juanma); <b>junto a festivo</b>; '
+    '<b>cambio a mano</b> (ese día o el de al lado se cambió respecto a la propuesta generada); y si no hay otra, <b>horas/cobertura</b>.',B))
+data=[['Persona','Total']+[LAB[c] for c in CATS]]; hl=[]
+for k,p in enumerate(people,1):
+    i=IDX[p]; cnt=collections.Counter()
+    for d in per[p]['desc1_f']:
+        for mm in motivo(i,d):
+            for c in CATS:
+                if mm.startswith(c): cnt[c]+=1
+    per[p]['desc1_mot']=cnt
+    data.append([nice(p),per[p]['desc1']]+[cnt.get(c,0) for c in CATS])
+    if per[p]['desc1']>C.MAX_DESCANSOS_1: hl.append((1,k,RED))
+story.append(tbl(data,[2.6*cm,1.2*cm]+[1.95*cm]*len(CATS),fs=6.8,hl=hl))
+story.append(Paragraph(f'En rojo, más de {C.MAX_DESCANSOS_1} descansos de 1 día (el límite que pusimos). Una misma fecha puede contar en varias columnas.',SM))
+# Juanma en detalle + los peores
+peores=sorted(people,key=lambda p:-per[p]['desc1'])[:4]
+if 'JUANMA' not in peores: peores=['JUANMA']+peores[:3]
+for p in peores:
+    i=IDX[p]; r=per[p]
+    story.append(Paragraph(f"{nice(p)} — {r['desc1']} descansos de 1 día",H2))
+    data=[['Fecha','Día','Antes','Después','Por qué']]
+    for d in r['desc1_f']:
+        data.append([f(d),['lunes','martes','miércoles','jueves','viernes','sábado','domingo'][wd[d]],K[i,d-1] or '-',K[i,d+1] or '-',Paragraph('; '.join(motivo(i,d)),SM)])
+    story.append(tbl(data,[2*cm,2*cm,1.4*cm,1.6*cm,10.5*cm],fs=7.4))
+    if p=='JUANMA':
+        nlib=sum(1 for d in sats if LIBRES[i,d] and not vac[i,d] or (LIBRES[i,d]))
+        story.append(Paragraph(f"<b>Por qué Juanma tiene tantos:</b> es central de lunes a viernes y además no puede trabajar los fines de semana que tiene a su hijo "
+            f"(alternos). Eso le deja menos días donde colocar sus 1.686 h, así que trabaja casi todos los días entre semana y, para no encadenar 7 días seguidos cuando "
+            f"le toca fin de semana, el descanso cae suelto en mitad de la semana (sobre todo lunes o martes después de un finde trabajado, o el viernes antes). "
+            f"Para bajarlos habría que darle más días libres seguidos (por ejemplo libra lunes y martes y recupera en otra semana) o que algún finde lo cubra otra persona de mañana.",B))
+story.append(Paragraph('Motivos generales',H2))
+tot=collections.Counter()
+for p in people: tot.update(per[p]['desc1_mot'])
+for c in CATS:
+    if tot[c]: story.append(Paragraph(f"• <b>{LAB[c].replace(chr(10),' ')}</b>: {tot[c]} casos.",B))
+story.append(Paragraph('En la propuesta generada (v13) había 50 descansos de 1 día en total (como mucho 5 por persona); al editar a mano se han cortado rachas largas '
+    'y movido días sueltos, y eso es lo que más ha multiplicado los descansos de 1 día. La forma de bajarlos es agrupar los libres de dos en dos (por ejemplo libra lunes+martes '
+    'en vez de lunes y jueves) manteniendo las horas.',SM))
 # ---------- comparativas
 def bars(names,series,labels,fn,title):
     x=np.arange(len(names)); wdt=0.8/len(series)
