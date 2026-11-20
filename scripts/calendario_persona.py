@@ -22,10 +22,11 @@ FEST_LAB={dt.date(2027,1,29),dt.date(2027,3,5),dt.date(2027,4,23),dt.date(2027,5
 KIND={'M':'M','MS':'MW','MD':'MW','C':'C','T':'T','TS':'TW','TD':'TW','N':'N','NV':'N','NS':'NS'}
 D={}; hrs=0
 if FROM_XLSX:
-    _wb=openpyxl.load_workbook(sys.argv[1]); _ws=_wb['Rotación anual']
-    _r=[r for r in range(4,19) if str(_ws.cell(r,1).value).strip().upper()==who][0]
+    _wb=openpyxl.load_workbook(sys.argv[1]); _PA='Propuesta anual' in _wb.sheetnames
+    _ws=_wb['Propuesta anual'] if _PA else _wb['Rotación anual']
+    _r=[r for r in range(1,40) if str(_ws.cell(r,1).value).strip().upper()==who][0]
     for d in range(CM.D):
-        assert _ws.cell(2,4+d).value=='LMXJVSD'[CM.wd[d]]
+        assert _ws.cell(4 if _PA else 2,4+d).value=='LMXJVSD'[CM.wd[d]]
         c=_ws.cell(_r,4+d); v=c.value.strip().upper() if isinstance(c.value,str) and c.value.strip() else None
         f=c.fill; fc=None
         if f is not None and f.fill_type=='solid': fc=f.fgColor.rgb if f.fgColor.type=='rgb' else f'theme{f.fgColor.theme}'
@@ -33,8 +34,8 @@ if FROM_XLSX:
         if v in KIND: hrs+=7 if (v in ('N','NV','NS') and (w==6 or dd in SPECIAL)) else 8
         else: v=None
         if v: k=KIND[v]
-        elif fc=='theme1': k='vac'
-        elif fc=='FFFF0000' or CM.closed[d]: k='rojo'
+        elif fc=='theme1' or (isinstance(c.value,str) and c.value.strip().upper()=='V'): k='vac'
+        elif (fc and fc.endswith('FF0000')) or CM.closed[d]: k='rojo'
         elif fc=='FF00B0F0': k='azul'
         else: k=None
         D[dd]=dict(code=v,kind=k,fest_lab=dd in FEST_LAB and k!='rojo')
@@ -49,7 +50,7 @@ for d in ([] if FROM_XLSX else range(CM.D)):
     elif CM.ROJO_PINTAR[i0,d]: k='rojo'
     else: k=None
     D[dd]=dict(code=v,kind=k,fest_lab=dd in FEST_LAB and k!='rojo')
-P=dict(title=f'{who} ({code_lbl})',tt=f'{nice} ({code_lbl})'+(f' · {TAG}' if TAG else ''),hours=hrs,sab=sum(1 for dd,i in D.items() if dd.weekday()==5 and i['code']),ja=int(CM.JA[i0]),out=f'{nice.replace(" ","_")}_{TAG or "propuesta"}')
+P=dict(title=f'{who} ({code_lbl})',tt=f'{nice} ({code_lbl})'+(f' · {TAG}' if TAG and TAG!='2027' else ''),hours=hrs,sab=sum(1 for dd,i in D.items() if dd.weekday()==5 and i['code']),ja=int(CM.JA[i0]),out=f'{nice.replace(" ","_")}_{TAG or "propuesta"}')
 n=sum(1 for i in D.values() if i['code']); sun=sum(1 for d,i in D.items() if i['code']=='N' and d.weekday()==6)
 spec=sum(1 for d in SPECIAL if D[d]['code'] in('N','NV','NS'))
 print('turnos',n,'horas',P['hours'])
@@ -136,6 +137,6 @@ for k in order:
     else: h.append(Rectangle((0,0),1,1,facecolor='#'+COL[k],edgecolor='#999',label=LEGTXT[k]))
 fig.legend(handles=h,loc='lower center',ncol=4,fontsize=13,frameon=False,bbox_to_anchor=(0.5,0.035))
 work=sum(used[k] for k in turn)
-fig.text(0.5,0.012,f'{work} días de turno · {used["vac"]} días de vacaciones · {used["rojo"]} festivos y cierres · {P["hours"]:,} h '.replace(',','.') + ('(revisado)' if FROM_XLSX else 'previstas (propuesta)'),ha='center',fontsize=12,color='#444')
+fig.text(0.5,0.012,f'{work} días de turno · {used["vac"]} días de vacaciones · {used["rojo"]} festivos y cierres · {P["hours"]:,} h '.replace(',','.') + ('' if FROM_XLSX else 'previstas (propuesta)'),ha='center',fontsize=12,color='#444')
 plt.savefig(os.path.join(CM.OUT,f'Calendario_2027_{P["out"]}.png'),dpi=130,facecolor='white')
 print(used)
