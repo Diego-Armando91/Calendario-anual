@@ -81,4 +81,4 @@ ROLE_OVERRIDE={D(2027,1,25):{'DENIA':'M'}, D(2027,3,29):{'DENIA':'M'}, D(2027,7,
 # Quien trabaja el sábado noche trabaja también el domingo noche (finde entero), salvo festivos (duro)
 SAB_NOCHE_IMPLICA_DOMINGO=True
 # Verano: repartir los fines de semana (mañana/tarde y sábado noche; el domingo noche no cuenta)
-VERANO=(D(2027,5,29),D(2027,8,29)); VERANO_MAX=3
+VERANO=(D(2027,5,29),D(2027,8,29)); VERANO_MAX=3; VERANO_MIN=2
