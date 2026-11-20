@@ -146,7 +146,7 @@ def tbl(data,widths=None,fs=7.8,hl=None,zebra=True):
 RED='#F8CBAD'; GRN='#C6EFCE'
 story=[]
 story.append(Paragraph(f'Análisis del cuadrante 2027 — {TAG}',H1))
-story.append(Paragraph(f'Fichero analizado: <i>{os.path.basename(SRC)}</i>. Todo se calcula leyendo los códigos de cada celda de la hoja «Propuesta anual» '
+story.append(Paragraph('Todo se calcula a partir de los códigos de cada día del cuadrante '
     '(M/MS/MD mañana, C central, T/TS/TD tarde, N/NV/NS noche, V vacaciones). Domingo noche y noches especiales cuentan 7 h.',B))
 nv=len(viol)
 res=[f'<b>Reglas duras incumplidas:</b> {nv}.',
