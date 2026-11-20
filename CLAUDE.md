@@ -15,7 +15,7 @@ Diego ha visto cuatro versiones (v1–v4) y ha ido añadiendo reglas. La v4 le g
 - a Armando, una en enero
 - a Rubén, dos entre enero y febrero
 
-Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v11** (`work/propuesta_v11.csv`, hecha desde la v10 editada por Diego).
+Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v12** (`work/propuesta_v12.csv`: v11 + mínimo 2 a las 7:00 sin la central y 2 de tarde entre semana, `--min-semana`, y cambios de semana de Denia/Bea en `config.ROLE_OVERRIDE`).
 
 ## 2. Datos (`data/`)
 
