@@ -75,3 +75,6 @@ EQUIDAD_EXC={('DIEGO ARMANDO','NS'):(-1,4),('ARMANDO','NS'):(-1,4),('RUBEN S','D
 MIN_SEMANA_M_SIN_CENTRAL=2
 MIN_SEMANA_T=2
 CENTRAL='JUANMA'
+# Cambios de turno de semana completa (lunes de la semana -> persona -> turno). Se usan para rebajar la tarde
+# y reforzar la mañana en semanas en que, sin la central, solo quedarían 2 de mañana.
+ROLE_OVERRIDE={D(2027,1,25):{'DENIA':'M'}, D(2027,3,29):{'DENIA':'M'}, D(2027,7,5):{'BEA':'M'}}

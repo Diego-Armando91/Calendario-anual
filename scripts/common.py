@@ -44,6 +44,11 @@ def load_roles():
     role=np.empty((P,D),dtype='U1')
     for i in range(P):
         for d in range(D): role[i,d]=R['roles'][str(i)][wk(d)]
+    for _mon,_m in getattr(C,'ROLE_OVERRIDE',{}).items():
+        _w=wk((_mon-C.YEAR_START).days)
+        for _n,_r in _m.items():
+            for d in range(D):
+                if wk(d)==_w: role[IDX[_n],d]=_r
     return role
 def save_solution(x,name):
     import csv
