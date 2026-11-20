@@ -15,7 +15,7 @@ Diego ha visto cuatro versiones (v1–v4) y ha ido añadiendo reglas. La v4 le g
 - a Armando, una en enero
 - a Rubén, dos entre enero y febrero
 
-Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v12** (`work/propuesta_v12.csv`: v11 + mínimo 2 a las 7:00 sin la central y 2 de tarde entre semana, `--min-semana`, y cambios de semana de Denia/Bea en `config.ROLE_OVERRIDE`).
+Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión actual es la **v13** (`work/propuesta_v13.csv`: desde la v12 editada por Diego, con domingos de vuelta de vacaciones liberados (`data/vacaciones_quitadas.json`), sábado noche ⇒ domingo noche, findes de verano repartidos (`--verano-duro`), sábado noche obligatorio y viernes noche mínimo 2. Antes, v12: v11 + mínimo 2 a las 7:00 sin la central y 2 de tarde entre semana, `--min-semana`, y cambios de semana de Denia/Bea en `config.ROLE_OVERRIDE`).
 
 ## 2. Datos (`data/`)
 
