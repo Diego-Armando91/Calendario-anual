@@ -71,3 +71,7 @@ MAX_FINDES_SEGUIDOS=2
 EQUIDAD_TOL=1
 EQUIDAD_EXC={('DIEGO ARMANDO','NS'):(-1,4),('ARMANDO','NS'):(-1,4),('RUBEN S','DN'):(-8,-3),
              ('ARMANDO','DN'):(-1,3),('JUANMA V','DN'):(-1,3),('ESTHER','DN'):(-1,2),('DAVID P','DN'):(-1,2),('LORENA','DN'):(-1,2),('DIEGO ARMANDO','DN'):(-1,2)}
+# Mínimo duro de personas entre semana (lunes-viernes laborables): mañana sin contar la central (Juanma entra a las 10:00) y tarde
+MIN_SEMANA_M_SIN_CENTRAL=2
+MIN_SEMANA_T=2
+CENTRAL='JUANMA'
