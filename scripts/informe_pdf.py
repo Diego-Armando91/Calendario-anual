@@ -187,7 +187,7 @@ story.append(tbl(data,[3*cm,1.8*cm,1.8*cm,1.8*cm,9*cm]))
 # viernes (sección destacada)
 FRI=[d for d in range(D) if wd[d]==4 and not closed[d]]
 GRUPOS=[('Mañana fija y central',['CHEMA','JUANMA']),('Tarde fija',['MICHEL','ALFREDO','IRENE','SOFIA']),('Rotan mañana ↔ tarde',['BEA','DENIA']),
-        ('Rotan mañana ↔ noche',['DIEGO ARMANDO','ESTHER','DAVID P','LORENA']),('Noche fija',['ARMANDO','JUANMA V','RUBEN S'])]
+        ('Rotan mañana ↔ noche',['ESTHER','DAVID P','DIEGO ARMANDO','LORENA']),('Noche fija',['ARMANDO','JUANMA V','RUBEN S'])]
 for p in people:
     i=IDX[p]; r=per[p]
     r['vie_disp']=sum(1 for d in FRI if not V[i,d])
@@ -322,8 +322,8 @@ def razones(group):
 for title,group,intro in (('Comparativa: Bea y Denia (rotan mañana ↔ tarde)',['BEA','DENIA'],
         'Bea y Denia forman pareja: cuando una está de mañana, la otra está de tarde. Lo lógico es que acaben con números parecidos; '
         'las diferencias suelen venir de cuándo cae cada una de vacaciones (el bloque de la otra se alarga) y de los cambios de semana para reforzar la mañana.'),
-     ('Comparativa: Diego, Esther, David y Lorena (rotan mañana ↔ noche)',['DIEGO ARMANDO','ESTHER','DAVID P','LORENA'],
-        'Los cuatro alternan mañana y noche por parejas (Diego–Lorena y Esther–David). Deberían quedar igualados en noches, viernes noche, sábados noche y fines de semana.')):
+     ('Comparativa: Esther, David, Diego y Lorena (rotan mañana ↔ noche)',['ESTHER','DAVID P','DIEGO ARMANDO','LORENA'],
+        'Los cuatro alternan mañana y noche por parejas (Esther–David y Diego–Lorena). Deberían quedar igualados en noches, viernes noche, sábados noche y fines de semana.')):
     story.append(PageBreak()); story.append(Paragraph(title,H1)); story.append(Paragraph(intro,B)); story.append(Spacer(1,4))
     story.append(comp_table(group))
     names=[nice(p) for p in group]
