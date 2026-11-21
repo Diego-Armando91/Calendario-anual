@@ -154,7 +154,7 @@ res=[f'<b>Reglas duras incumplidas:</b> {nv}.',
      f'<b>Horas fuera de JA…JA+8:</b> {sum(1 for p in people if not 0<=per[p]["dif"]<=C.HOURS_TOL)} personas.',
      f'<b>Semanas por debajo del mínimo:</b> {sum(len(per[p]["bajo_min"]) for p in people)}.',
      f'<b>Días entre semana con menos de 2 a las 7:00</b> (sin contar la central): {len(cov["m7"])}; <b>tarde con menos de 2:</b> {len(cov["t"])}.',
-     f'<b>Viernes noche por debajo del objetivo:</b> {len(cov["vie_bajo"])}; <b>domingos noche con 1:</b> {len(cov["dom1"])}; <b>sábados noche sin nadie:</b> {len(cov["sab0"])}.',
+     f'<b>Viernes noche por debajo del objetivo:</b> {len(cov["vie_bajo"])}; <b>domingos noche sin nadie:</b> {sum(1 for _,n in cov["dom1"] if n==0)}; <b>con 1:</b> {sum(1 for _,n in cov["dom1"] if n==1)}; <b>sábados noche sin nadie:</b> {len(cov["sab0"])}.',
      f'<b>Fines de semana de mañana/tarde por debajo de lo previsto:</b> {len(cov["findes_bajo"])} días.',
      f'<b>Descansos de 1 día:</b> {sum(per[p]["desc1"] for p in people)} en total. '
      f'<b>Rachas de 6 días:</b> {sum(per[p]["rachas6"] for p in people)}. <b>Fines de semana seguidos (pares):</b> {sum(per[p]["pares"] for p in people)}.']
@@ -246,7 +246,7 @@ story.append(tbl(data,[2.8*cm,1*cm,14*cm],fs=7.4))
 # cobertura
 story.append(PageBreak()); story.append(Paragraph('Cobertura',H2))
 cl=[f"<b>Viernes noche</b> (personas: nº de viernes): "+', '.join(f'{k}: {v}' for k,v in sorted(cov['vie'].items()))+'. Por debajo del objetivo: '+(', '.join(f"{f(d)} ({n} de {t})" for d,n,t in cov['vie_bajo']) or 'ninguno')+'.',
-    f"<b>Domingo noche</b> (personas: nº): "+', '.join(f'{k}: {v}' for k,v in sorted(cov['dom'].items()))+'. Con 1 persona: '+(', '.join(f(d) for d,_ in cov['dom1']) or 'ninguno')+'.',
+    f"<b>Domingo noche</b> (personas: nº): "+', '.join(f'{k}: {v}' for k,v in sorted(cov['dom'].items()))+'. <b>Sin nadie:</b> '+(', '.join(f(d) for d,n in cov['dom1'] if n==0) or 'ninguno')+'. Con 1 persona: '+(', '.join(f(d) for d,n in cov['dom1'] if n==1) or 'ninguno')+'.',
     f"<b>Sábados noche sin nadie</b> (dentro del periodo): "+(', '.join(f(d) for d in cov['sab0']) or 'ninguno')+'.',
     f"<b>Entre semana con menos de 2 a las 7:00</b> (sin la central): "+(', '.join(f"{DIAS[wd[d]]} {f(d)} ({n})" for d,n in cov['m7']) or 'ninguno')+'.',
     f"<b>Tarde entre semana con menos de 2:</b> "+(', '.join(f"{DIAS[wd[d]]} {f(d)} ({n})" for d,n in cov['t']) or 'ninguno')+'.',
