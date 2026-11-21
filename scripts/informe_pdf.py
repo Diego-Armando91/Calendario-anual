@@ -44,10 +44,11 @@ for i,p in enumerate(people):
     r['vac']=int(V[i].sum())
     fr=[d for d in range(D) if wd[d]==4 and W_[i,d]]
     r['vie']=len(fr); r['vie_por']={c:[d for d in fr if S[i,d]==c] for c in 'MCTN'}
-    r['sab']=sum(1 for d in sats if W_[i,d]); r['dom']=sum(1 for d in range(D) if wd[d]==6 and W_[i,d])
+    r['sab']=sum(1 for d in sats if W_[i,d]); r['dom']=sum(1 for d in range(D) if wd[d]==6 and DAY[i,d])   # domingo de mañana/tarde (el domingo noche no es fin de semana)
     r['sab_MT']=sum(1 for d in sats if DAY[i,d]); r['NS']=sum(1 for d in sats if S[i,d]=='N')
     r['DN']=sum(1 for d in range(D) if wd[d]==6 and S[i,d]=='N'); r['NV']=len(r['vie_por']['N'])
-    wk_=[bool(W_[i,d] or (d+1<D and W_[i,d+1])) for d in sats]
+    # fin de semana = sábado o domingo de mañana/tarde, o sábado noche (el domingo noche no cuenta)
+    wk_=[bool(DAY[i,d] or (d+1<D and DAY[i,d+1]) or S[i,d]=='N') for d in sats]
     r['findes']=sum(wk_); run=mx=0; pares=0
     for k,v in enumerate(wk_):
         run=run+1 if v else 0; mx=max(mx,run)
@@ -176,7 +177,7 @@ for k,p in enumerate(people,1):
     if r['bajo_min']: hl.append((17,k,RED))
 story.append(tbl(data,[2.5*cm]+[0.9*cm]*17,fs=6.4,hl=hl))
 story.append(Paragraph(f'En rojo lo que no cumple: horas fuera de JA…JA+{C.HOURS_TOL}, más de {C.MAX_RACHAS6} rachas de 6, '
-    f'más de {C.MAX_FINDES_SEGUIDOS} fines de semana seguidos (día y rotativos) o semanas bajo el mínimo. «Findes» = sábado o domingo trabajado en cualquier turno.',SM))
+    f'más de {C.MAX_FINDES_SEGUIDOS} fines de semana seguidos (día y rotativos) o semanas bajo el mínimo. «Findes» = sábado o domingo de mañana/tarde, o sábado noche (el domingo noche no cuenta como fin de semana). «Sáb.» = cualquier turno; «Dom.» = mañana/tarde.',SM))
 # noches
 story.append(Paragraph('Noches de fin de semana y viernes',H2))
 data=[['Persona','Viernes\nnoche','Sábado\nnoche','Domingo\nnoche','Tandas de noche (longitud: nº)']]
@@ -293,8 +294,8 @@ def bars(names,series,labels,fn,title):
 def comp_table(group):
     keys=[('Días trabajados','dias'),('Horas (dif. JA)',None),('Vacaciones (días V)','vac'),('Mañana','M'),('Tarde','T'),('Noche','N'),
           ('Viernes trabajados','vie'),('  viernes de mañana',lambda r: len(r['vie_por']['M'])),('  viernes de tarde',lambda r: len(r['vie_por']['T'])),('  viernes noche (NV)','NV'),
-          ('Sábados (cualquier turno)','sab'),('Domingos (cualquier turno)','dom'),('Sábados de mañana/tarde','sab_MT'),('Sábado noche','NS'),('Domingo noche','DN'),
-          ('Fines de semana trabajados','findes'),('Findes sin contar domingo noche','findes_sin_DN'),('Findes en verano (29 may–29 ago)','verano'),('Findes seguidos (pares)','pares'),
+          ('Sábados (cualquier turno)','sab'),('Domingos de mañana/tarde','dom'),('Sábados de mañana/tarde','sab_MT'),('Sábado noche','NS'),('Domingo noche','DN'),
+          ('Fines de semana trabajados','findes'),('Findes en verano (29 may–29 ago)','verano'),('Findes seguidos (pares)','pares'),
           ('Máx. findes seguidos','max_findes'),('Rachas de 6 días','rachas6')]
     data=[['']+[nice(p) for p in group]+['Diferencia\nmáx–mín']]; hl=[]
     for k,(lab,key) in enumerate(keys,1):
