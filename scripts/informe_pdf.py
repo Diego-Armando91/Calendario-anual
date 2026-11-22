@@ -185,6 +185,24 @@ for p in people:
     r=per[p]
     if r['N']: data.append([nice(p),r['NV'],r['NS'],r['DN'],', '.join(f'{L}:{n}' for L,n in sorted(r['tandas_noche'].items()))])
 story.append(tbl(data,[3*cm,1.8*cm,1.8*cm,1.8*cm,9*cm]))
+# lunes libres (sección)
+MON=[d for d in range(D) if wd[d]==0 and not closed[d] and not (date[d] in SPECIAL)]
+for p in people:
+    i=IDX[p]; r=per[p]
+    r['lun_libres']=[d for d in MON if not W_[i,d] and not V[i,d]]
+    r['lun_trab']=[d for d in MON if W_[i,d]]
+    r['lun_vac']=sum(1 for d in MON if V[i,d])
+story.append(PageBreak()); story.append(Paragraph('LUNES — qué libra cada uno',H1))
+story.append(Paragraph('Lunes libres (sin vacaciones) de cada persona. Los lunes de vacaciones no se cuentan como libres.',B))
+data=[['Persona','Lunes disponibles','Trabaja','Libra','Vacaciones']]
+for p in people:
+    r=per[p]; data.append([nice(p),len(MON)-r['lun_vac'],len(r['lun_trab']),len(r['lun_libres']),r['lun_vac']])
+story.append(tbl(data,[3.2*cm,3*cm,2.4*cm,2.4*cm,2.4*cm],fs=7.6))
+story.append(Spacer(1,6)); story.append(Paragraph('Fechas de los lunes libres',H2))
+for p in people:
+    r=per[p]
+    lst=', '.join(f(d) for d in r['lun_libres']) or '—'
+    story.append(Paragraph(f"<b>{nice(p)}</b> — {len(r['lun_libres'])} lunes libres: {lst}",SM))
 # viernes (sección destacada)
 FRI=[d for d in range(D) if wd[d]==4 and not closed[d]]
 GRUPOS=[('Mañana fija y central',['CHEMA','JUANMA']),('Tarde fija',['MICHEL','ALFREDO','IRENE','SOFIA']),('Rotan mañana ↔ tarde',['BEA','DENIA']),
