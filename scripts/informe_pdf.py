@@ -213,6 +213,47 @@ for p in people:
     r['vie_libres']=[d for d in FRI if not V[i,d] and not W_[i,d]]
     r['puentes']=[d for d in FRI if not W_[i,d] and not V[i,d] and d+2<D and not W_[i,d+1] and not W_[i,d+2]]
     r['vie_finde']=[d for d in FRI if W_[i,d] and d+1<D and (W_[i,d+1] or (d+2<D and W_[i,d+2]))]
+# ---- verano: viernes y fines de semana (antes de la sección de viernes)
+order=[p for g,ms in GRUPOS for p in ms]
+story.append(PageBreak()); story.append(Paragraph('VERANO — viernes y fines de semana trabajados',H1))
+V0=(dt.date(2027,5,30)-start).days; V1=(dt.date(2027,9,1)-start).days
+story.append(Paragraph('Viernes trabajados del 30 de mayo al 1 de septiembre',H2))
+data=[['Persona','Nº','Fechas (turno)']]
+for p in order:
+    i=IDX[p]; ds=[d for d in FRI if V0<=d<=V1 and W_[i,d]]
+    data.append([nice(p),len(ds),Paragraph(', '.join(f"{f(d)} ({ {'M':'M','C':'C','T':'T','N':'NV'}[S[i,d]] })" for d in ds) or '—',SM)])
+story.append(tbl(data,[2.8*cm,1*cm,14*cm],fs=7.4))
+# fines de semana del viernes 28 de mayo al 1 de septiembre (sábado/domingo de mañana o tarde, o sábado noche)
+W0=(dt.date(2027,5,28)-start).days
+SATS_V=[d for d in sats if W0<=d<=V1]
+def fw(d):
+    a,b=date[d],date[d+1]
+    return f"{a.day}-{b.day} {MESES[a.month-1]}" if a.month==b.month else f"{a.day} {MESES[a.month-1]}-{b.day} {MESES[b.month-1]}"
+story.append(Spacer(1,8)); story.append(Paragraph('Fines de semana trabajados del 28 de mayo al 1 de septiembre',H2))
+story.append(Paragraph(f'{len(SATS_V)} fines de semana (del {f(SATS_V[0])} al {f(SATS_V[-1]+1)}). Cuenta como fin de semana trabajado el sábado o domingo de mañana/tarde '
+    'o el sábado noche; el domingo noche no cuenta. Entre paréntesis el turno: M mañana, C central, T tarde, NS sábado noche.',SM))
+data=[['Persona','Nº','Seguidos','Fines de semana (turno)']]; hl=[]
+for k,p in enumerate(order,1):
+    i=IDX[p]; ws_=[]
+    for d in SATS_V:
+        sh=None
+        for q in (d,d+1):
+            if q<D and S[i,q] in ('M','C','T'): sh=S[i,q]; break
+        if sh is None and S[i,d]=='N': sh='NS'
+        if sh: ws_.append((d,sh))
+    seg=sum(1 for (a,_),(b,_) in zip(ws_,ws_[1:]) if b-a==7)
+    data.append([nice(p),len(ws_),seg,Paragraph(', '.join(f"{fw(d)} ({sh})" for d,sh in ws_) or '—',SM)])
+    if seg: hl.append((2,k,RED))
+story.append(tbl(data,[2.8*cm,1*cm,1.5*cm,12.5*cm],fs=7.4,hl=hl))
+story.append(Paragraph('En rojo, quien encadena fines de semana seguidos dentro del verano (número de pares seguidos).',SM))
+# reparto por fin de semana
+story.append(Spacer(1,6)); story.append(Paragraph('Quién trabaja cada fin de semana',H2))
+data=[['Fin de semana','Mañana','Tarde','Sábado noche']]
+for d in SATS_V:
+    def who(c):
+        return ', '.join(nice(p) for p in people if (c=='NS' and S[IDX[p],d]=='N') or (c!='NS' and any(q<D and S[IDX[p],q] in c for q in (d,d+1)))) or '—'
+    data.append([fw(d),Paragraph(who(('M','C')),SM),Paragraph(who(('T',)),SM),Paragraph(who('NS') if d in SATN else '— (sin sábado noche)',SM)])
+story.append(tbl(data,[3.2*cm,5*cm,5*cm,4.6*cm],fs=7.4))
 story.append(PageBreak()); story.append(Paragraph('VIERNES — quién los trabaja y en qué turno',H1))
 story.append(Paragraph('Para cada persona: viernes que no está de vacaciones («disponibles»), cuántos trabaja y en qué turno, cuántos libra, '
     'cuántos son «puente» (libra viernes, sábado y domingo) y cuántos van pegados a un fin de semana trabajado. '
@@ -254,13 +295,6 @@ for g,ms in GRUPOS:
     story.append(Paragraph('• '+txt,B))
 story.append(Paragraph('Nota: el personal de noche fija trabaja menos viernes en total porque su viernes es casi siempre NV y lo reparten entre 3 personas más los rotativos; '
     'el personal de día trabaja casi todos los viernes disponibles porque el viernes de día lleva cobertura de 3 personas.',SM))
-V0=(dt.date(2027,5,30)-start).days; V1=(dt.date(2027,9,1)-start).days
-story.append(Paragraph('Viernes trabajados del 30 de mayo al 1 de septiembre',H2))
-data=[['Persona','Nº','Fechas (turno)']]
-for p in order:
-    i=IDX[p]; ds=[d for d in FRI if V0<=d<=V1 and W_[i,d]]
-    data.append([nice(p),len(ds),Paragraph(', '.join(f"{f(d)} ({ {'M':'M','C':'C','T':'T','N':'NV'}[S[i,d]] })" for d in ds) or '—',SM)])
-story.append(tbl(data,[2.8*cm,1*cm,14*cm],fs=7.4))
 # cobertura
 story.append(PageBreak()); story.append(Paragraph('Cobertura',H2))
 cl=[f"<b>Viernes noche</b> (personas: nº de viernes): "+', '.join(f'{k}: {v}' for k,v in sorted(cov['vie'].items()))+'. Por debajo del objetivo: '+(', '.join(f"{f(d)} ({n} de {t})" for d,n,t in cov['vie_bajo']) or 'ninguno')+'.',
