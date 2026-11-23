@@ -295,6 +295,29 @@ for g,ms in GRUPOS:
     story.append(Paragraph('• '+txt,B))
 story.append(Paragraph('Nota: el personal de noche fija trabaja menos viernes en total porque su viernes es casi siempre NV y lo reparten entre 3 personas más los rotativos; '
     'el personal de día trabaja casi todos los viernes disponibles porque el viernes de día lleva cobertura de 3 personas.',SM))
+# ---------- festivos laborables
+FL=sorted((x-start).days for x in C.FEST_LAB)
+story.append(PageBreak()); story.append(Paragraph('FESTIVOS LABORABLES — quién los trabaja',H1))
+story.append(Paragraph('Festivos laborables de 2027: '+', '.join(f(d) for d in FL)+'. Para cada persona, cuántos trabaja y en qué turno '
+    '(M mañana, C central, T tarde, NV/N/NS noche; «V» vacaciones, «—» libre).',B))
+SH={'M':'M','C':'C','T':'T'}
+def cod(i,d):
+    if W_[i,d]: return K[i,d] if K[i,d] else S[i,d]
+    return 'V' if V[i,d] else '—'
+data=[['Persona','Trabaja']+[f"{date[d].day} {MESES[date[d].month-1]}" for d in FL]]; hl=[]
+order_f=[p for g,ms in GRUPOS for p in ms]
+cnt_f={}
+for k,p in enumerate(order_f,1):
+    i=IDX[p]; n=sum(1 for d in FL if W_[i,d]); cnt_f[p]=n
+    data.append([nice(p),n]+[cod(i,d) for d in FL])
+    for j,d in enumerate(FL):
+        if W_[i,d]: hl.append((2+j,k,'#FCE4D6'))
+data.append(['Personas por festivo','']+[int(W_[:,d].sum()) for d in FL])
+story.append(tbl(data,[2.8*cm,1.4*cm]+[1.65*cm]*len(FL),fs=7.4,hl=hl))
+story.append(Paragraph('En naranja claro, los festivos que trabaja cada persona. La última fila es cuántas personas trabajan ese festivo.',SM))
+for g,ms in GRUPOS:
+    vals={p:cnt_f[p] for p in ms}
+    story.append(Paragraph(f"• <b>{g}</b>: "+', '.join(f"{nice(p)} {v}" for p,v in sorted(vals.items(),key=lambda t:-t[1]))+'.',B))
 # ---------- septiembre a noviembre: 4 personas por turno
 story.append(PageBreak()); story.append(Paragraph('SEPTIEMBRE A NOVIEMBRE — 4 personas por turno',H1))
 story.append(Paragraph('De septiembre a final de noviembre se intenta que cada turno de lunes a viernes tenga <b>4 personas</b>, salvo los turnos complicados '
