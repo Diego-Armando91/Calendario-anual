@@ -299,20 +299,26 @@ story.append(Paragraph('Nota: el personal de noche fija trabaja menos viernes en
 FL=sorted((x-start).days for x in C.FEST_LAB)
 story.append(PageBreak()); story.append(Paragraph('FESTIVOS LABORABLES — quién los trabaja',H1))
 story.append(Paragraph('Festivos laborables de 2027: '+', '.join(f(d) for d in FL)+'. Para cada persona, cuántos trabaja y en qué turno '
-    '(M mañana, C central, T tarde, NV/N/NS noche; «V» vacaciones, «—» libre).',B))
-SH={'M':'M','C':'C','T':'T'}
+    '(M mañana, C central, T tarde; «V» vacaciones, «—» libre). <b>De noche, el festivo es la noche anterior</b>: por ejemplo, el 29 de enero es la noche del 28 al 29 (se marca con *); la noche del festivo al día siguiente no cuenta.',B))
+NOC=('N','NV','NS')
+def es_noche(i,d): return d>=0 and W_[i,d] and S[i,d] in NOC
+def trab_fest(i,d):
+    """trabaja el festivo d: de día ese mismo día, o de noche la noche anterior (de d-1 a d)"""
+    if W_[i,d] and S[i,d] not in NOC: return True
+    return bool(es_noche(i,d-1))
 def cod(i,d):
-    if W_[i,d]: return K[i,d] if K[i,d] else S[i,d]
+    if W_[i,d] and S[i,d] not in NOC: return K[i,d] if K[i,d] else S[i,d]
+    if es_noche(i,d-1): return (K[i,d-1] if K[i,d-1] else S[i,d-1])+'*'
     return 'V' if V[i,d] else '—'
 data=[['Persona','Trabaja']+[f"{date[d].day} {MESES[date[d].month-1]}" for d in FL]]; hl=[]
 order_f=[p for g,ms in GRUPOS for p in ms]
-cnt_f={}
+cnt_f={}; porfest=collections.Counter()
 for k,p in enumerate(order_f,1):
-    i=IDX[p]; n=sum(1 for d in FL if W_[i,d]); cnt_f[p]=n
+    i=IDX[p]; n=sum(1 for d in FL if trab_fest(i,d)); cnt_f[p]=n
     data.append([nice(p),n]+[cod(i,d) for d in FL])
     for j,d in enumerate(FL):
-        if W_[i,d]: hl.append((2+j,k,'#FCE4D6'))
-data.append(['Personas por festivo','']+[int(W_[:,d].sum()) for d in FL])
+        if trab_fest(i,d): hl.append((2+j,k,'#FCE4D6')); porfest[d]+=1
+data.append(['Personas por festivo','']+[porfest[d] for d in FL])
 story.append(tbl(data,[2.8*cm,1.4*cm]+[1.65*cm]*len(FL),fs=7.4,hl=hl))
 story.append(Paragraph('En naranja claro, los festivos que trabaja cada persona. La última fila es cuántas personas trabajan ese festivo.',SM))
 for g,ms in GRUPOS:
