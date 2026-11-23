@@ -17,6 +17,8 @@ MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septie
 MC = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
 DS = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo']
 f = lambda d: f"{DS[d.weekday()][:3]} {d.day} {MC[d.month-1]}"
+CUT = dt.date(Y, 9, 15)   # desde aquí la pareja tiene jornada reducida: mañana 10-14, tarde 16-20 (no se cuentan solapes)
+RED = {'M': ('10:00', '14:00'), 'T': ('16:00', '20:00')}
 
 # ---------------- calendario de la pareja (PDF Inditex)
 pg = pdfplumber.open(PDFP).pages[0]
@@ -88,6 +90,7 @@ TIP_RAW = collections.OrderedDict([
 TIP = collections.OrderedDict((k, v.replace('la pareja', NOMBRE).replace('La pareja', NOMBRE)) for k, v in TIP_RAW.items())
 def hh(m): m %= 1440; return f"{m//60:02d}:{m%60:02d}"
 for i, d in enumerate(DAYS):
+    if d >= CUT: continue
     pi = p_int(d); di = d_int(d)
     prev = DAYS[i - 1] if i else None
     dprev = d_int(prev) if prev else None
@@ -108,9 +111,11 @@ for i, d in enumerate(DAYS):
     if prev and DG[prev] == 'N' and pi and ptipo(d) == 'T' and pi[0] < mins(d, '14:00'):
         eventos.append((d, 'SUEÑO', f"Diego viene de noche · {NOMBRE} {P[d]['ini']}-{P[d]['fin']}", 0))
 # días en los que trabajan los dos / libres los dos
-both = [d for d in DAYS if DG[d] in ('M', 'N') and P[d]['ini']]
+both = [d for d in DAYS if DG[d] in ('M', 'N') and P[d]['ini'] and d < CUT]
+both_red = [d for d in DAYS if DG[d] in ('M', 'N') and P[d]['ini'] and d >= CUT]
+def red_h(d): a, b = RED[ptipo(d)]; return f'{a}-{b}'
 libres = [d for d in DAYS if DG[d] in ('LIB', 'VAC') and not P[d]['ini']]
-finde_ambos = [d for d in DAYS if d.weekday() >= 5 and DG[d] in ('M', 'N') and P[d]['ini']]
+finde_ambos = [d for d in DAYS if d.weekday() >= 5 and DG[d] in ('M', 'N') and P[d]['ini'] and d < CUT]
 problema = sorted({e[0] for e in eventos if e[1] in ('MM', 'NM', 'NT', 'MT')})
 cnt = collections.Counter(e[1] for e in eventos)
 pm = collections.defaultdict(collections.Counter)
@@ -135,35 +140,39 @@ story.append(Paragraph(f'Se cruzan día a día los dos calendarios: el de Diego 
     f'{sum(1 for d in DAYS if P[d]["ini"])} días con turno). Se considera que una persona está «fuera de casa» desde 30 minutos antes de entrar hasta 30 minutos después de salir. '
     'Diego: mañana 06:45-15:00 y noche 23:00-07:00 (después de la noche duerme hasta media tarde). '
     f'Hay <b>solape</b> cuando los dos están fuera a la vez y alguien tiene que quedarse con los niños.', B))
+story.append(Paragraph(f'<b>Del 15 de septiembre a final de año {NOMBRE} tiene jornada reducida</b> (4 horas: mañana 10:00-14:00, tarde 16:00-20:00). '
+    'En ese periodo no se cuentan solapes: solo se marcan los días en que trabajáis los dos (apartado propio al final). Todos los recuentos de solapes son del 1 de enero al 14 de septiembre.', B))
 story.append(Paragraph('Resumen', H2))
 data = [['Situación', 'Días']]; hl = []
 for k, lab in TIP.items():
     data.append([Paragraph(lab, SM), cnt.get(k, 0)])
     if k in ('MM', 'NM', 'NT', 'MT') and cnt.get(k, 0): hl.append((1, len(data) - 1, '#F8CBAD'))
 data.append([Paragraph('<b>Días con algún solape (necesitan ayuda con los niños)</b>', SM), len(problema)]); hl.append((1, len(data) - 1, '#F8CBAD'))
-data.append([Paragraph('Días que trabajáis los dos (en cualquier turno)', SM), len(both)])
+data.append([Paragraph('Días que trabajáis los dos (en cualquier turno), hasta el 14 sep', SM), len(both)])
+data.append([Paragraph(f'Días que trabajáis los dos del 15 sep a fin de año ({NOMBRE} con jornada reducida)', SM), len(both_red)])
 data.append([Paragraph('Días que <b>compartís turno</b> (los dos de mañana el mismo día)', SM), cnt.get('MM', 0)])
-data.append([Paragraph('Fines de semana (sábado o domingo) que trabajáis los dos', SM), len(finde_ambos)])
+data.append([Paragraph('Fines de semana (sábado o domingo) que trabajáis los dos, hasta el 14 sep', SM), len(finde_ambos)])
 data.append([Paragraph('Días que libráis los dos (incluye vacaciones)', SM), len(libres)])
 story.append(tbl(data, [13 * cm, 2.5 * cm], fs=8, hl=hl))
 story.append(Paragraph('En naranja, las situaciones en que los niños se quedan sin ninguno de los dos.', SM))
 # por mes
 story.append(Paragraph('Solapes por mes', H2))
 data = [['Mes', 'Mañana-mañana', 'Noche→mañana', 'Noche-tarde', 'Mañana→tarde', 'Relevo justo', 'Total con solape']]
-for m in range(1, 13):
+for m in range(1, 10):
     c = pm[m]; tot = len({e[0] for e in eventos if e[0].month == m and e[1] in ('MM', 'NM', 'NT', 'MT')})
-    data.append([MES[m - 1].capitalize(), c['MM'], c['NM'], c['NT'], c['MT'], c['JUSTO'], tot])
+    data.append([MES[m - 1].capitalize() + (' (1-14)' if m == 9 else ''), c['MM'], c['NM'], c['NT'], c['MT'], c['JUSTO'], tot])
 data.append(['TOTAL', cnt['MM'], cnt['NM'], cnt['NT'], cnt['MT'], cnt['JUSTO'], len(problema)])
 story.append(tbl(data, [2.6 * cm, 2.4 * cm, 2.4 * cm, 2.2 * cm, 2.4 * cm, 2.2 * cm, 2.6 * cm], fs=7.8))
 # gráfico
-fig, ax = plt.subplots(figsize=(9.5, 3.2)); x = range(12); bot = [0] * 12
+fig, ax = plt.subplots(figsize=(9.5, 3.2)); x = range(9); bot = [0] * 9
 for k, lab, colr in (('MM', 'Mañana-mañana', '#A9D18E'), ('NM', 'Noche→mañana', '#E97132'), ('NT', 'Noche-tarde', '#C9A7E0'), ('MT', 'Mañana→tarde', '#4472C4')):
     v = [pm[m + 1][k] for m in x]; ax.bar(x, v, bottom=bot, label=lab, color=colr); bot = [a + b for a, b in zip(bot, v)]
-ax.set_xticks(list(x)); ax.set_xticklabels([m[:3] for m in MES]); ax.spines[['top', 'right']].set_visible(False)
+ax.set_xticks(list(x)); ax.set_xticklabels([m[:3] for m in MES[:9]]); ax.spines[['top', 'right']].set_visible(False)
 ax.legend(ncol=4, fontsize=8, frameon=False, loc='upper center', bbox_to_anchor=(0.5, 1.15)); ax.set_ylabel('días')
 plt.tight_layout(); im = os.path.join(WORK, '_pareja.png'); plt.savefig(im, dpi=170); plt.close()
 story.append(Spacer(1, 4)); story.append(Image(im, width=17 * cm, height=5.7 * cm))
 # por día de la semana
+story.append(Paragraph('Hasta el 14 de septiembre. Desde el 15 de septiembre no se cuentan solapes (jornada reducida).', SM))
 story.append(Paragraph('¿Qué días de la semana fallan más?', H2))
 wdc = collections.Counter(d.weekday() for d in problema)
 story.append(Paragraph(', '.join(f"{DS[k]}: <b>{wdc.get(k, 0)}</b>" for k in range(7)) + '.', B))
@@ -184,21 +193,39 @@ for s in sats:
     sun = s + dt.timedelta(1)
     if sun.year != Y: continue
     dd = '/'.join(DG[x] if DG[x] != 'LIB' else '-' for x in (s, sun))
-    pp = '/'.join((P[x]['ini'] + '-' + P[x]['fin']) if P[x]['ini'] else ('VAC' if ptipo(x) == 'VAC' else '-') for x in (s, sun))
+    pp = '/'.join((red_h(x) if x >= CUT else P[x]['ini'] + '-' + P[x]['fin']) if P[x]['ini'] else ('VAC' if ptipo(x) == 'VAC' else '-') for x in (s, sun))
     prob = [x for x in (s, sun) if x in problema]
     if DG[s] in ('M', 'N') or DG[sun] in ('M', 'N') or P[s]['ini'] or P[sun]['ini']:
-        data.append([f"{s.day}-{sun.day} {MC[sun.month-1]}", dd, pp, ', '.join(DS[x.weekday()] for x in prob) or ''])
+        col4 = ', '.join(DS[x.weekday()] for x in prob) or ''
+        if s >= CUT: col4 = ('trabajáis los dos: ' + ', '.join(DS[x.weekday()] for x in (s, sun) if x in both_red)) if any(x in both_red for x in (s, sun)) else ''
+        data.append([f"{s.day}-{sun.day} {MC[sun.month-1]}", dd, pp, col4])
 story.append(tbl(data, [3 * cm, 2.6 * cm, 6.4 * cm, 5 * cm], fs=7.2))
-story.append(Paragraph('Diego: M mañana, N noche, VAC vacaciones, - libre. Se listan los fines de semana en que trabaja al menos uno de los dos.', SM))
+story.append(Paragraph(f'Desde el 15 de septiembre, horario reducido de {NOMBRE} y solo se indica si trabajáis los dos. Diego: M mañana, N noche, VAC vacaciones, - libre. Se listan los fines de semana en que trabaja al menos uno de los dos.', SM))
+# jornada reducida
+story.append(PageBreak()); story.append(Paragraph(f'Del 15 de septiembre a final de año — días que trabajáis los dos', H1))
+story.append(Paragraph(f'{NOMBRE} trabaja 4 horas: de mañana 10:00-14:00 y de tarde 16:00-20:00. No se cuentan solapes; solo se marcan los días en que trabajáis los dos: '
+    f'<b>{len(both_red)} días</b>.', B))
+cm_ = collections.Counter((d.month, DG[d], ptipo(d)) for d in both_red)
+data = [['Mes'] + [Paragraph(f'<b>Diego {a}<br/>{NOMBRE} {b}</b>', SM) for a, b in (('mañana','mañana'),('mañana','tarde'),('noche','mañana'),('noche','tarde'))] + ['Total']]
+for m in range(9, 13):
+    data.append([MES[m-1].capitalize() + (' (15-30)' if m == 9 else ''), cm_[(m,'M','M')], cm_[(m,'M','T')], cm_[(m,'N','M')], cm_[(m,'N','T')], sum(1 for d in both_red if d.month == m)])
+data.append(['TOTAL', sum(cm_[(m,'M','M')] for m in range(9,13)), sum(cm_[(m,'M','T')] for m in range(9,13)), sum(cm_[(m,'N','M')] for m in range(9,13)), sum(cm_[(m,'N','T')] for m in range(9,13)), len(both_red)])
+story.append(tbl(data, [2.6*cm, 3.3*cm, 3.3*cm, 3.3*cm, 3.3*cm, 1.6*cm], fs=7.2))
+story.append(Paragraph('Diego noche = la noche que empieza ese día a las 23:00.', SM))
+story.append(Spacer(1, 6))
+data = [['Fecha', 'Diego', NOMBRE + ' (reducida)']]
+for d in both_red: data.append([f(d), {'M': 'Mañana 06:45-15:00', 'N': 'Noche 23:00-07:00'}[DG[d]], ('Mañana ' if ptipo(d) == 'M' else 'Tarde ') + red_h(d)])
+story.append(tbl(data, [3.4*cm, 5*cm, 5*cm], fs=7.4))
 # conclusiones
 story.append(PageBreak()); story.append(Paragraph('Qué nos complica más el cuidado de los niños', H1))
 tops = sorted(((cnt[k], TIP[k]) for k in ('NM', 'MM', 'NT', 'MT')), reverse=True)
 for n, lab in tops:
     if n: story.append(Paragraph(f'• <b>{lab}</b>: {n} días.', B))
 story.append(Paragraph('Lecturas útiles', H2))
-mes_peor = max(range(1, 13), key=lambda m: len({e[0] for e in eventos if e[0].month == m and e[1] in ('MM', 'NM', 'NT', 'MT')}))
+mes_peor = max(range(1, 10), key=lambda m: len({e[0] for e in eventos if e[0].month == m and e[1] in ('MM', 'NM', 'NT', 'MT')}))
 story.append(Paragraph(f"• El mes más complicado es <b>{MES[mes_peor-1]}</b>.", B))
-story.append(Paragraph(f"• Los dos trabajáis a la vez el fin de semana {len(finde_ambos)} días: esos días no hay colegio y hace falta ayuda seguro.", B))
+story.append(Paragraph(f"• Del 1 de enero al 14 de septiembre hay <b>{len(problema)} días con solape</b>. Del 15 de septiembre a final de año, con la jornada reducida de {NOMBRE}, coincidís trabajando {len(both_red)} días.", B))
+story.append(Paragraph(f"• Hasta el 14 de septiembre, los dos trabajáis a la vez el fin de semana {len(finde_ambos)} días: esos días no hay colegio y hace falta ayuda seguro.", B))
 story.append(Paragraph(f'• «Noche → mañana»: Diego llega a casa sobre las 07:30 y {NOMBRE} tiene que salir sobre las 06:30 (o 07:30 en domingo): '
     'durante ese hueco y la mañana (mientras Diego duerme) los niños necesitan a alguien.', B))
 story.append(Paragraph(f'• «Noche-tarde»: {NOMBRE} vuelve a las 23:30 (00:30 si sale a las 00:00) y Diego se va a las 22:30: queda una hora (o dos) sin nadie y la acostada de los niños.', B))
@@ -212,4 +239,4 @@ story.append(Paragraph(f'• <b>Lo ideal</b>: que las semanas de noche de Diego 
 out = os.path.join(OUT, f'Informe_Turnos_Diego_{NOMBRE}_2027.pdf')
 SimpleDocTemplate(out, pagesize=A4, leftMargin=1.4 * cm, rightMargin=1.4 * cm, topMargin=1.3 * cm, bottomMargin=1.3 * cm, title=f'Turnos Diego y {NOMBRE} 2027').build(story)
 print('ok', out); print('pareja días con turno', sum(1 for d in DAYS if P[d]['ini']), 'tipos', collections.Counter(ptipo(d) for d in DAYS))
-print('eventos', dict(cnt), 'días con solape', len(problema), 'ambos trabajan', len(both), 'finde ambos', len(finde_ambos), 'libres ambos', len(libres))
+print('both_red', len(both_red)); print('eventos', dict(cnt), 'días con solape', len(problema), 'ambos trabajan', len(both), 'finde ambos', len(finde_ambos), 'libres ambos', len(libres))
