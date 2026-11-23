@@ -31,9 +31,11 @@ if FROM_XLSX:
         f=c.fill; fc=None
         if f is not None and f.fill_type=='solid': fc=f.fgColor.rgb if f.fgColor.type=='rgb' else f'theme{f.fgColor.theme}'
         dd=CM.date[d]; w=CM.wd[d]
-        if v in KIND: hrs+=7 if (v in ('N','NV','NS') and (w==6 or dd in SPECIAL)) else 8
+        if v=='A': hrs+=8   # acumulación: no se trabaja pero cuenta para el cuadre de horas
+        elif v in KIND: hrs+=7 if (v in ('N','NV','NS') and (w==6 or dd in SPECIAL)) else 8
         else: v=None
-        if v: k=KIND[v]
+        if v=='A': k='acu'
+        elif v: k=KIND[v]
         elif fc=='theme1' or (isinstance(c.value,str) and c.value.strip().upper()=='V'): k='vac'
         elif (fc and fc.endswith('FF0000')) or CM.closed[d]: k='rojo'
         elif fc=='FF00B0F0': k='azul'
@@ -54,11 +56,11 @@ P=dict(title=f'{who} ({code_lbl})',tt=f'{nice} ({code_lbl})'+(f' · {TAG}' if TA
 n=sum(1 for i in D.values() if i['code']); sun=sum(1 for d,i in D.items() if i['code']=='N' and d.weekday()==6)
 spec=sum(1 for d in SPECIAL if D[d]['code'] in('N','NV','NS'))
 print('turnos',n,'horas',P['hours'])
-COL={'C':'FFE699','M':'A9D18E','MW':'A9D18E','T':'C9A7E0','TW':'C9A7E0','N':'E97132','NS':'F4B183','vac':'404040','azul':'00B0F0','rojo':'FF0000',None:'F2F2F2'}
-NAME={'C':'Central (mañana)','M':'Mañana','MW':'Mañana sábado/domingo','T':'Tarde','TW':'Tarde sábado/domingo','N':'Noche','NS':'Noche sábado','vac':'Vacaciones','azul':'Día azul (sin turno)','rojo':'Festivo no laborable',None:'Libre'}
-LEGTXT={'C':'Central de mañana (C)','M':'Mañana (M)','MW':'Mañana sábado/domingo (MS, MD)','T':'Tarde (T)','TW':'Tarde sábado/domingo (TS, TD)','N':'Noche (N, NV: viernes noche)','NS':'Noche sábado (NS)','vac':'Vacaciones','azul':'Día marcado en azul (sin turno)','rojo':'Día festivo no laborable','fl':'Festivo laborable'}
+COL={'C':'FFE699','M':'A9D18E','MW':'A9D18E','T':'C9A7E0','TW':'C9A7E0','N':'E97132','NS':'F4B183','vac':'404040','acu':'9BC2E6','azul':'00B0F0','rojo':'FF0000',None:'F2F2F2'}
+NAME={'C':'Central (mañana)','M':'Mañana','MW':'Mañana sábado/domingo','T':'Tarde','TW':'Tarde sábado/domingo','N':'Noche','NS':'Noche sábado','vac':'Vacaciones','acu':'Acumulación (cuadre de horas)','azul':'Día azul (sin turno)','rojo':'Festivo no laborable',None:'Libre'}
+LEGTXT={'C':'Central de mañana (C)','M':'Mañana (M)','MW':'Mañana sábado/domingo (MS, MD)','T':'Tarde (T)','TW':'Tarde sábado/domingo (TS, TD)','N':'Noche (N, NV: viernes noche)','NS':'Noche sábado (NS)','vac':'Vacaciones','acu':'Acumulación (A): cuadre de horas','azul':'Día marcado en azul (sin turno)','rojo':'Día festivo no laborable','fl':'Festivo laborable'}
 used=Counter(i['kind'] for i in D.values())
-order=[k for k in ('C','M','MW','T','TW','N','NS','vac','azul','rojo') if used[k]]+['fl']
+order=[k for k in ('C','M','MW','T','TW','N','NS','vac','acu','azul','rojo') if used[k]]+['fl']
 MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
 YEL,RED='FFFF00','C00000'
@@ -137,6 +139,6 @@ for k in order:
     else: h.append(Rectangle((0,0),1,1,facecolor='#'+COL[k],edgecolor='#999',label=LEGTXT[k]))
 fig.legend(handles=h,loc='lower center',ncol=4,fontsize=13,frameon=False,bbox_to_anchor=(0.5,0.035))
 work=sum(used[k] for k in turn)
-fig.text(0.5,0.012,f'{work} días de turno · {used["vac"]} días de vacaciones · {used["rojo"]} festivos y cierres · {P["hours"]:,} h '.replace(',','.') + ('' if FROM_XLSX else 'previstas (propuesta)'),ha='center',fontsize=12,color='#444')
+fig.text(0.5,0.012,f'{work} días de turno · {used["vac"]} días de vacaciones · ' + (f'{used["acu"]} días de acumulación (A) · ' if used['acu'] else '') + f'{used["rojo"]} festivos y cierres · {P["hours"]:,} h '.replace(',','.') + ('' if FROM_XLSX else 'previstas (propuesta)'),ha='center',fontsize=12,color='#444')
 plt.savefig(os.path.join(CM.OUT,f'Calendario_2027_{P["out"]}.png'),dpi=130,facecolor='white')
 print(used)

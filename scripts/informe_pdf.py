@@ -20,18 +20,19 @@ nice=lambda p: p.title().replace('Diego Armando','Diego').replace('Ruben S','Rub
 # ---------- lectura
 ws=openpyxl.load_workbook(SRC)['Propuesta anual']
 rows={str(ws.cell(r,1).value).strip().upper():r for r in range(1,ws.max_row+1) if str(ws.cell(r,1).value).strip().upper() in people}
-K=np.full((P,D),'',dtype=object); V=np.zeros((P,D),bool)
+K=np.full((P,D),'',dtype=object); V=np.zeros((P,D),bool); AC=np.zeros((P,D),bool)   # AC = acumulación (A): no se trabaja, cuenta 8 h para el cuadre
 for i,p in enumerate(people):
     for d in range(D):
         v=ws.cell(rows[p],4+d).value; v=v.strip().upper() if isinstance(v,str) else ''
         if v=='V': V[i,d]=True
+        elif v=='A': V[i,d]=True; AC[i,d]=True
         elif v in CL: K[i,d]=v
 S=np.vectorize(lambda v: CL.get(v,''))(K)           # clase de turno M/C/T/N
 W_=(S!='')                                            # trabaja
 DAY=np.isin(S,['M','C','T'])
 J=IDX['JUANMA']
 HOL={(date[d]) for d in range(D) if closed[d]}
-def hrs(i): return sum(7 if (S[i,d]=='N' and (wd[d]==6 or date[d] in SPECIAL)) else 8 for d in range(D) if W_[i,d])
+def hrs(i): return sum(7 if (S[i,d]=='N' and (wd[d]==6 or date[d] in SPECIAL)) else 8 for d in range(D) if W_[i,d]) + 8*int(AC[i].sum())
 
 # ---------- métricas por persona
 VER0=(dt.date(2027,6,1)-start).days; VER1=(dt.date(2027,9,1)-start).days   # verano = junio a agosto
@@ -41,7 +42,7 @@ for i,p in enumerate(people):
     r=dict()
     r['dias']=int(W_[i].sum()); r['horas']=hrs(i); r['ja']=int(JA[i]); r['dif']=r['horas']-r['ja']
     for c in 'MCTN': r[c]=int((S[i]==c).sum())
-    r['vac']=int(V[i].sum())
+    r['vac']=int(V[i].sum())-int(AC[i].sum()); r['acu']=int(AC[i].sum())
     fr=[d for d in range(D) if wd[d]==4 and W_[i,d]]
     r['vie']=len(fr); r['vie_por']={c:[d for d in fr if S[i,d]==c] for c in 'MCTN'}
     r['sab']=sum(1 for d in sats if W_[i,d]); r['dom']=sum(1 for d in range(D) if wd[d]==6 and DAY[i,d])   # domingo de mañana/tarde (el domingo noche no es fin de semana)
@@ -86,7 +87,7 @@ for i,p in enumerate(people):
     for w in range(NW):
         dd=[d for d in range(D) if wk(d)==w]; n=int(W_[i,dd].sum())
         if len(dd)==7 and not V[i,dd].any() and n>=6: r['sem6']+=1
-        if n<M.WEEKMIN[i,w] and not V[i,dd].all(): r['bajo_min'].append((w,n,int(M.WEEKMIN[i,w])))
+        if n<M.WEEKMIN[i,w] and not V[i,dd].all() and not AC[i,dd].any(): r['bajo_min'].append((w,n,int(M.WEEKMIN[i,w])))
         cls={('D' if S[i,d] in 'MC' else S[i,d]) for d in dd if W_[i,d] and not (wd[d]==6 and S[i,d]=='N')}
         if len(cls)>1: r['mezcla'].append(w)
     # reglas duras
@@ -148,10 +149,11 @@ RED='#F8CBAD'; GRN='#C6EFCE'
 story=[]
 story.append(Paragraph(f'Análisis del cuadrante 2027 — {TAG}',H1))
 story.append(Paragraph('Todo se calcula a partir de los códigos de cada día del cuadrante '
-    '(M/MS/MD mañana, C central, T/TS/TD tarde, N/NV/NS noche, V vacaciones). Domingo noche y noches especiales cuentan 7 h.',B))
+    '(M/MS/MD mañana, C central, T/TS/TD tarde, N/NV/NS noche, V vacaciones, A acumulación). Domingo noche y noches especiales cuentan 7 h.',B))
 nv=len(viol)
 res=[f'<b>Reglas duras incumplidas:</b> {nv}.',
      f'<b>Horas fuera de JA…JA+8:</b> {sum(1 for p in people if not 0<=per[p]["dif"]<=C.HOURS_TOL)} personas.',
+     *([f'<b>Acumulación (A):</b> '+', '.join(f"{nice(p)} {per[p]['acu']} días ({per[p]['acu']*8} h)" for p in people if per[p]['acu'])+'; cuentan para el cuadre de horas.'] if any(per[p]['acu'] for p in people) else []),
      f'<b>Semanas por debajo del mínimo:</b> {sum(len(per[p]["bajo_min"]) for p in people)}.',
      f'<b>Días entre semana con menos de 2 a las 7:00</b> (sin contar la central): {len(cov["m7"])}; <b>tarde con menos de 2:</b> {len(cov["t"])}.',
      f'<b>Viernes noche por debajo del objetivo:</b> {len(cov["vie_bajo"])}; <b>domingos noche sin nadie:</b> {sum(1 for _,n in cov["dom1"] if n==0)}; <b>con 1:</b> {sum(1 for _,n in cov["dom1"] if n==1)}; <b>sábados noche sin nadie:</b> {len(cov["sab0"])}.',
@@ -176,6 +178,12 @@ for k,p in enumerate(people,1):
     if r['max_findes']>C.MAX_FINDES_SEGUIDOS and p not in C.G_NIGHT: hl.append((13,k,RED))
     if r['bajo_min']: hl.append((17,k,RED))
 story.append(tbl(data,[2.5*cm]+[0.9*cm]*17,fs=6.4,hl=hl))
+for p in people:
+    r=per[p]
+    if r['acu']:
+        story.append(Paragraph(f"<b>{nice(p)}: {r['acu']} días de acumulación (A)</b>, por la reducción de jornada por hijos ({', '.join(sorted({MESES[date[d].month-1] for d in range(D) if AC[IDX[p],d]}, key=MESES.index))}). "
+            f"Esos días no se trabaja, pero cuentan 8 h cada uno para el cuadre: {r['acu']*8} h. Trabajadas de verdad: {r['horas']-r['acu']*8} h; con la acumulación, {r['horas']} h (JA {r['ja']}). "
+            f"Los días con A no cuentan como vacaciones ni como días trabajados.",B))
 story.append(Paragraph(f'En rojo lo que no cumple: horas fuera de JA…JA+{C.HOURS_TOL}, más de {C.MAX_RACHAS6} rachas de 6, '
     f'más de {C.MAX_FINDES_SEGUIDOS} fines de semana seguidos (día y rotativos) o semanas bajo el mínimo. «Findes» = sábado o domingo de mañana/tarde, o sábado noche (el domingo noche no cuenta como fin de semana). «Sáb.» = cualquier turno; «Dom.» = mañana/tarde.',SM))
 # noches
@@ -299,7 +307,7 @@ story.append(Paragraph('Nota: el personal de noche fija trabaja menos viernes en
 FL=sorted((x-start).days for x in C.FEST_LAB)
 story.append(PageBreak()); story.append(Paragraph('FESTIVOS LABORABLES — quién los trabaja',H1))
 story.append(Paragraph('Festivos laborables de 2027: '+', '.join(f(d) for d in FL)+'. Para cada persona, cuántos trabaja y en qué turno '
-    '(M mañana, C central, T tarde; «V» vacaciones, «—» libre). <b>De noche, el festivo es la noche anterior</b>: por ejemplo, el 29 de enero es la noche del 28 al 29 (se marca con *); la noche del festivo al día siguiente no cuenta.',B))
+    '(M mañana, C central, T tarde; «V» vacaciones, «A» acumulación, «—» libre). <b>De noche, el festivo es la noche anterior</b>: por ejemplo, el 29 de enero es la noche del 28 al 29 (se marca con *); la noche del festivo al día siguiente no cuenta.',B))
 NOC=('N','NV','NS')
 def es_noche(i,d): return d>=0 and W_[i,d] and S[i,d] in NOC
 def trab_fest(i,d):
@@ -309,7 +317,7 @@ def trab_fest(i,d):
 def cod(i,d):
     if W_[i,d] and S[i,d] not in NOC: return K[i,d] if K[i,d] else S[i,d]
     if es_noche(i,d-1): return (K[i,d-1] if K[i,d-1] else S[i,d-1])+'*'
-    return 'V' if V[i,d] else '—'
+    return 'A' if AC[i,d] else ('V' if V[i,d] else '—')
 data=[['Persona','Trabaja']+[f"{date[d].day} {MESES[date[d].month-1]}" for d in FL]]; hl=[]
 order_f=[p for g,ms in GRUPOS for p in ms]
 cnt_f={}; porfest=collections.Counter()
