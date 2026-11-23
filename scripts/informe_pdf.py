@@ -216,8 +216,8 @@ for p in people:
 # ---- verano: viernes y fines de semana (antes de la sección de viernes)
 order=[p for g,ms in GRUPOS for p in ms]
 story.append(PageBreak()); story.append(Paragraph('VERANO — viernes y fines de semana trabajados',H1))
-V0=(dt.date(2027,5,30)-start).days; V1=(dt.date(2027,9,1)-start).days
-story.append(Paragraph('Viernes trabajados del 30 de mayo al 1 de septiembre',H2))
+V0=(dt.date(2027,6,1)-start).days; V1=(dt.date(2027,8,31)-start).days
+story.append(Paragraph('Viernes trabajados de junio a agosto',H2))
 data=[['Persona','Nº','Fechas (turno)']]
 for p in order:
     i=IDX[p]; ds=[d for d in FRI if V0<=d<=V1 and W_[i,d]]
@@ -298,8 +298,7 @@ story.append(Paragraph('Nota: el personal de noche fija trabaja menos viernes en
 # ---------- septiembre a noviembre: 4 personas por turno
 story.append(PageBreak()); story.append(Paragraph('SEPTIEMBRE A NOVIEMBRE — 4 personas por turno',H1))
 story.append(Paragraph('De septiembre a final de noviembre se intenta que cada turno de lunes a viernes tenga <b>4 personas</b>, salvo los turnos complicados '
-    '(la noche, que tiene menos personal y su objetivo es 3) y los días en que alguien del turno está de vacaciones. Aquí se cuenta, día a día, cuántas personas hay '
-    'en mañana (contando la central), en tarde y en noche, y para cada día que no llega a 4 se indica si hay alguien de ese turno de vacaciones.',B))
+    '(la noche, que tiene menos personal y su objetivo es 3) y los días en que alguien del turno está de vacaciones. La tabla resume, de lunes a viernes, cuántos días tiene cada turno 4 personas o más, 3, o 2 o menos.',B))
 S0=(dt.date(2027,9,1)-start).days; S1=(dt.date(2027,11,30)-start).days
 DLAB=['lunes','martes','miércoles','jueves','viernes']
 def turno_semana(i,d):
@@ -317,22 +316,20 @@ for d in dias:
         if n<4:
             vacs=[nice(p) for p in people if V[IDX[p],d] and turno_semana(IDX[p],d)==c]
             falta[c].append((d,n,vacs))
-data=[['Turno','Días laborables','Con 4 o más','Con 3','Con 2 o menos','% con 4+']]
-for c,lab in (('M','Mañana (con central)'),('T','Tarde'),('N','Noche')):
+data=[['Turno','Con 4 o más','Con 3','Con 2 o menos','% con 4']]
+for c,lab in (('M','Mañana (contando la central)'),('T','Tarde'),('N','Noche (turno complicado, objetivo 3)')):
     tot=len(dias); c4=sum(v for k,v in res[c].items() if k>=4); c3=res[c][3]; c2=sum(v for k,v in res[c].items() if k<=2)
-    data.append([lab,tot,c4,c3,c2,f"{100*c4/tot:.0f} %"])
-story.append(tbl(data,[4*cm,2.6*cm,2.4*cm,2*cm,2.6*cm,2*cm],fs=7.8))
-for c,lab in (('M','Mañana'),('T','Tarde'),('N','Noche')):
-    story.append(Paragraph(f'{lab}: días con menos de 4',H2))
-    if c=='N':
-        story.append(Paragraph('La noche es un turno complicado: con 3 personas fijas de noche más los rotativos, el objetivo entre semana es 3, así que lo normal es que no llegue a 4.',SM))
-    conv=sum(1 for _,_,v in falta[c] if v); sinv=[x for x in falta[c] if not x[2]]
-    story.append(Paragraph(f"{len(falta[c])} días por debajo de 4: <b>{conv}</b> con alguien del turno de vacaciones y <b>{len(sinv)}</b> sin vacaciones en ese turno.",B))
-    rows_=[['Día','Personas','Vacaciones en el turno']]
-    for d,n,v in falta[c]: rows_.append([f"{DLAB[wd[d]]} {f(d)}",n,Paragraph(', '.join(v) or '<font color="#C00000">nadie de vacaciones</font>',SM)])
-    if len(rows_)>1: story.append(tbl(rows_,[3.6*cm,1.8*cm,12.2*cm],fs=7.2))
-story.append(Paragraph('Cómo leerlo: los días con alguien de vacaciones en el turno son la excepción prevista. Los marcados como «nadie de vacaciones» son los que se podrían reforzar '
-    'moviendo un día de trabajo de otra semana, sin cambiar las horas de nadie.',SM))
+    data.append([lab,c4,c3,c2,f"{100*c4/tot:.0f} %"])
+story.append(tbl(data,[6*cm,2.4*cm,2*cm,2.6*cm,2*cm],fs=7.8))
+story.append(Spacer(1,6))
+story.append(Paragraph('Por qué no se llega siempre a 4',H2))
+story.append(Paragraph('Desde el 4 de septiembre los fines de semana de mañana y de tarde los trabajan <b>dos personas</b> en vez de una. '
+    'Quien trabaja el sábado y el domingo tiene que librar esos dos días entre semana para no pasar de 6 días seguidos y para cuadrar sus horas, '
+    'así que cada fin de semana trabajado «quita» dos días de lunes a viernes al turno. Con dos personas por fin de semana se libran el doble de días '
+    'entre semana: por eso hay días que se quedan en 3 y el porcentaje de días con 4 no es más alto. Si el fin de semana lo hiciera una sola persona, '
+    'habría menos libres entre semana y el porcentaje subiría.',B))
+story.append(Paragraph('A esto se suman las <b>vacaciones</b> (cuando alguien del turno está fuera, el turno baja) y la <b>noche</b>, que es un turno complicado: '
+    'tiene menos personal fijo y su objetivo entre semana es 3, no 4. Aun así, más de la mitad de los días de mañana y de noche llegan a 4 personas.',B))
 # cobertura
 story.append(PageBreak()); story.append(Paragraph('Cobertura',H2))
 cl=[f"<b>Viernes noche</b> (personas: nº de viernes): "+', '.join(f'{k}: {v}' for k,v in sorted(cov['vie'].items()))+'. Por debajo del objetivo: '+(', '.join(f"{f(d)} ({n} de {t})" for d,n,t in cov['vie_bajo']) or 'ninguno')+'.',
