@@ -34,7 +34,7 @@ HOL={(date[d]) for d in range(D) if closed[d]}
 def hrs(i): return sum(7 if (S[i,d]=='N' and (wd[d]==6 or date[d] in SPECIAL)) else 8 for d in range(D) if W_[i,d])
 
 # ---------- métricas por persona
-VER0=(C.VERANO[0]-start).days; VER1=(C.VERANO[1]-start).days
+VER0=(dt.date(2027,6,1)-start).days; VER1=(dt.date(2027,9,1)-start).days   # verano = junio a agosto
 sats=[d for d in range(D) if wd[d]==5]
 per={}; viol=[]
 for i,p in enumerate(people):
@@ -224,12 +224,12 @@ for p in order:
     data.append([nice(p),len(ds),Paragraph(', '.join(f"{f(d)} ({ {'M':'M','C':'C','T':'T','N':'NV'}[S[i,d]] })" for d in ds) or '—',SM)])
 story.append(tbl(data,[2.8*cm,1*cm,14*cm],fs=7.4))
 # fines de semana del viernes 28 de mayo al 1 de septiembre (sábado/domingo de mañana o tarde, o sábado noche)
-W0=(dt.date(2027,5,28)-start).days
+W0=(dt.date(2027,6,1)-start).days; V1=(dt.date(2027,8,31)-start).days
 SATS_V=[d for d in sats if W0<=d<=V1]
 def fw(d):
     a,b=date[d],date[d+1]
     return f"{a.day}-{b.day} {MESES[a.month-1]}" if a.month==b.month else f"{a.day} {MESES[a.month-1]}-{b.day} {MESES[b.month-1]}"
-story.append(Spacer(1,8)); story.append(Paragraph('Fines de semana trabajados del 28 de mayo al 1 de septiembre',H2))
+story.append(Spacer(1,8)); story.append(Paragraph('Fines de semana trabajados de junio a agosto',H2))
 story.append(Paragraph(f'{len(SATS_V)} fines de semana (del {f(SATS_V[0])} al {f(SATS_V[-1]+1)}). Cuenta como fin de semana trabajado el sábado o domingo de mañana/tarde '
     'o el sábado noche; el domingo noche no cuenta. Entre paréntesis el turno: M mañana, C central, T tarde, NS sábado noche.',SM))
 data=[['Persona','Nº','Seguidos','Fines de semana (turno)']]; hl=[]
@@ -295,6 +295,44 @@ for g,ms in GRUPOS:
     story.append(Paragraph('• '+txt,B))
 story.append(Paragraph('Nota: el personal de noche fija trabaja menos viernes en total porque su viernes es casi siempre NV y lo reparten entre 3 personas más los rotativos; '
     'el personal de día trabaja casi todos los viernes disponibles porque el viernes de día lleva cobertura de 3 personas.',SM))
+# ---------- septiembre a noviembre: 4 personas por turno
+story.append(PageBreak()); story.append(Paragraph('SEPTIEMBRE A NOVIEMBRE — 4 personas por turno',H1))
+story.append(Paragraph('De septiembre a final de noviembre se intenta que cada turno de lunes a viernes tenga <b>4 personas</b>, salvo los turnos complicados '
+    '(la noche, que tiene menos personal y su objetivo es 3) y los días en que alguien del turno está de vacaciones. Aquí se cuenta, día a día, cuántas personas hay '
+    'en mañana (contando la central), en tarde y en noche, y para cada día que no llega a 4 se indica si hay alguien de ese turno de vacaciones.',B))
+S0=(dt.date(2027,9,1)-start).days; S1=(dt.date(2027,11,30)-start).days
+DLAB=['lunes','martes','miércoles','jueves','viernes']
+def turno_semana(i,d):
+    """turno habitual de la persona en la semana de d (para saber de qué turno es quien está de vacaciones)"""
+    cnt=collections.Counter(('M' if S[i,k] in ('M','C') else S[i,k]) for k in range(D) if wk(k)==wk(d) and W_[i,k])
+    if cnt: return cnt.most_common(1)[0][0]
+    # semana entera de vacaciones: mirar la semana anterior
+    cnt=collections.Counter(('M' if S[i,k] in ('M','C') else S[i,k]) for k in range(D) if wk(k)==wk(d)-1 and W_[i,k])
+    return cnt.most_common(1)[0][0] if cnt else '?'
+dias=[d for d in range(S0,S1+1) if wd[d]<5 and not closed[d] and date[d] not in C.DAY_OFF and date[d] not in SPECIAL]
+res={c:collections.Counter() for c in 'MTN'}; falta={c:[] for c in 'MTN'}
+for d in dias:
+    for c,codes in (('M',('M','C')),('T',('T',)),('N',('N',))):
+        n=int(np.isin(S[:,d],codes).sum()); res[c][min(n,5)]+=1
+        if n<4:
+            vacs=[nice(p) for p in people if V[IDX[p],d] and turno_semana(IDX[p],d)==c]
+            falta[c].append((d,n,vacs))
+data=[['Turno','Días laborables','Con 4 o más','Con 3','Con 2 o menos','% con 4+']]
+for c,lab in (('M','Mañana (con central)'),('T','Tarde'),('N','Noche')):
+    tot=len(dias); c4=sum(v for k,v in res[c].items() if k>=4); c3=res[c][3]; c2=sum(v for k,v in res[c].items() if k<=2)
+    data.append([lab,tot,c4,c3,c2,f"{100*c4/tot:.0f} %"])
+story.append(tbl(data,[4*cm,2.6*cm,2.4*cm,2*cm,2.6*cm,2*cm],fs=7.8))
+for c,lab in (('M','Mañana'),('T','Tarde'),('N','Noche')):
+    story.append(Paragraph(f'{lab}: días con menos de 4',H2))
+    if c=='N':
+        story.append(Paragraph('La noche es un turno complicado: con 3 personas fijas de noche más los rotativos, el objetivo entre semana es 3, así que lo normal es que no llegue a 4.',SM))
+    conv=sum(1 for _,_,v in falta[c] if v); sinv=[x for x in falta[c] if not x[2]]
+    story.append(Paragraph(f"{len(falta[c])} días por debajo de 4: <b>{conv}</b> con alguien del turno de vacaciones y <b>{len(sinv)}</b> sin vacaciones en ese turno.",B))
+    rows_=[['Día','Personas','Vacaciones en el turno']]
+    for d,n,v in falta[c]: rows_.append([f"{DLAB[wd[d]]} {f(d)}",n,Paragraph(', '.join(v) or '<font color="#C00000">nadie de vacaciones</font>',SM)])
+    if len(rows_)>1: story.append(tbl(rows_,[3.6*cm,1.8*cm,12.2*cm],fs=7.2))
+story.append(Paragraph('Cómo leerlo: los días con alguien de vacaciones en el turno son la excepción prevista. Los marcados como «nadie de vacaciones» son los que se podrían reforzar '
+    'moviendo un día de trabajo de otra semana, sin cambiar las horas de nadie.',SM))
 # cobertura
 story.append(PageBreak()); story.append(Paragraph('Cobertura',H2))
 cl=[f"<b>Viernes noche</b> (personas: nº de viernes): "+', '.join(f'{k}: {v}' for k,v in sorted(cov['vie'].items()))+'. Por debajo del objetivo: '+(', '.join(f"{f(d)} ({n} de {t})" for d,n,t in cov['vie_bajo']) or 'ninguno')+'.',
@@ -347,7 +385,7 @@ def comp_table(group):
     keys=[('Días trabajados','dias'),('Horas (dif. JA)',None),('Vacaciones (días V)','vac'),('Mañana','M'),('Tarde','T'),('Noche','N'),
           ('Viernes trabajados','vie'),('  viernes de mañana',lambda r: len(r['vie_por']['M'])),('  viernes de tarde',lambda r: len(r['vie_por']['T'])),('  viernes noche (NV)','NV'),
           ('Sábados (cualquier turno)','sab'),('Domingos de mañana/tarde','dom'),('Sábados de mañana/tarde','sab_MT'),('Sábado noche','NS'),('Domingo noche','DN'),
-          ('Fines de semana trabajados','findes'),('Findes en verano (29 may–29 ago)','verano'),('Findes seguidos (pares)','pares'),
+          ('Fines de semana trabajados','findes'),('Findes en verano (junio–agosto)','verano'),('Findes seguidos (pares)','pares'),
           ('Máx. findes seguidos','max_findes'),('Rachas de 6 días','rachas6')]
     data=[['']+[nice(p) for p in group]+['Diferencia\nmáx–mín']]; hl=[]
     for k,(lab,key) in enumerate(keys,1):
