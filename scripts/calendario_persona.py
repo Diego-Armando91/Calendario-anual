@@ -18,7 +18,7 @@ PREFIX='Calendario 2027' if FROM_XLSX else 'Propuesta 2027'
 i0=CM.IDX[who]; code_lbl=[k for k in CM.summ][i0].split('(')[1].strip(')')
 nice=who.title().replace('Diego Armando','Diego')
 SPECIAL=CM.SPECIAL
-FEST_LAB={dt.date(2027,1,29),dt.date(2027,3,5),dt.date(2027,4,23),dt.date(2027,5,1),dt.date(2027,8,15)}
+FEST_LAB=CM.C.FEST_LAB
 KIND={'M':'M','MS':'MW','MD':'MW','C':'C','T':'T','TS':'TW','TD':'TW','N':'N','NV':'N','NS':'NS'}
 D={}; hrs=0
 if FROM_XLSX:

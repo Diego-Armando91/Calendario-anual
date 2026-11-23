@@ -64,7 +64,7 @@ Esto **no puede ser** (regla 4.12). La v6 (CP-SAT) lo resolvió; la versión act
 Están en `scripts/config.py`.
 - **Cierres** (nadie trabaja): 25 y 26 de marzo; 24, 25 y 31 de diciembre.
 - **Noches especiales de 00:00 a 07:00** (7 h, solo personal de noche): 1 y 6 de enero, 27 de marzo y 12 de octubre.
-- **Festivos laborables** (recuadro rojo en los calendarios): 29 de enero, 5 de marzo, 23 de abril, 1 de mayo y 15 de agosto.
+- **Festivos laborables** (recuadro rojo en los calendarios): 29 de enero, 5 de marzo, 23 de abril, 1 de mayo, 15 de agosto, 1 de noviembre, 6 y 8 de diciembre (`config.FEST_LAB`).
 
 ### Horas
 

@@ -82,3 +82,5 @@ ROLE_OVERRIDE={D(2027,1,25):{'DENIA':'M'}, D(2027,3,29):{'DENIA':'M'}, D(2027,7,
 SAB_NOCHE_IMPLICA_DOMINGO=True
 # Verano: repartir los fines de semana (mañana/tarde y sábado noche; el domingo noche no cuenta)
 VERANO=(D(2027,5,29),D(2027,8,29)); VERANO_MAX=3; VERANO_MIN=2
+# Festivos laborables (recuadro rojo en los calendarios individuales)
+FEST_LAB={D(2027,1,29),D(2027,3,5),D(2027,4,23),D(2027,5,1),D(2027,8,15),D(2027,11,1),D(2027,12,6),D(2027,12,8)}
