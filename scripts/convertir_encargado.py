@@ -1,6 +1,7 @@
 """Convierte un calendario con hoja 'Rotación anual' (formato original, vacaciones en negro) al formato 'Propuesta anual'
 (códigos, V = vacaciones) para poder pasarle informe_pdf.py y calendario_persona.py.
-  python convertir_encargado.py ../data/CALENDARIO2027V1.1_encargado.xlsx ../data/CALENDARIO2027V1.1_encargado_PA.xlsx"""
+  python convertir_encargado.py ../data/CALENDARIO2027V1.1_encargado.xlsx ../data/CALENDARIO2027V1.1_encargado_PA.xlsx [PERSONA,desde,hasta]
+El tercer argumento (opcional) marca como A (acumulación) los días laborables sin turno de ese bloque (p. ej. el bloque en rojo de reducción de jornada)."""
 import sys, copy, datetime as dt, openpyxl
 from openpyxl.styles import PatternFill
 from common import people
@@ -9,7 +10,10 @@ wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'Propuesta anual'
 ws.cell(4, 1, 'NOMBRE'); s = dt.date(2027, 1, 1)
 for d in range(365):
     ws.cell(3, 4 + d, dt.datetime.combine(s + dt.timedelta(d), dt.time())); ws.cell(4, 4 + d, 'LMXJVSD'[(s + dt.timedelta(d)).weekday()])
-r = 5; conflict = []
+r = 5; conflict = []; nA = 0
+ACU = None
+if len(sys.argv) > 3:
+    _p, _a, _b = sys.argv[3].split(','); ACU = (_p.upper(), dt.date.fromisoformat(_a), dt.date.fromisoformat(_b))
 for sr in range(4, 19):
     n = str(src.cell(sr, 1).value).strip().upper()
     assert n in people, n
@@ -23,7 +27,10 @@ for sr in range(4, 19):
             if v: conflict.append((n, str(s + dt.timedelta(d)), v))
             o.value = 'V'
         else: o.value = v
+        dd = s + dt.timedelta(d)
+        if ACU and n == ACU[0] and ACU[1] <= dd <= ACU[2] and not v and fc != 'theme1' and dd.weekday() < 5:
+            o.value = 'A'; nA += 1; continue
         if fc and fc.endswith('FF0000'): o.fill = PatternFill('solid', fgColor='FFFF0000')
         elif fc == 'FF00B0F0': o.fill = PatternFill('solid', fgColor='FF00B0F0')
     r += 1
-wb.save(sys.argv[2]); print('ok', sys.argv[2], 'vacaciones con código:', conflict)
+wb.save(sys.argv[2]); print('ok', sys.argv[2], 'vacaciones con código:', conflict, 'días A:', nA)
