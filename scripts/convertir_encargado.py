@@ -23,12 +23,12 @@ for sr in range(4, 19):
         f = c.fill; fc = None
         if f is not None and f.fill_type == 'solid': fc = f.fgColor.rgb if f.fgColor.type == 'rgb' else f'theme{f.fgColor.theme}'
         o = ws.cell(r, 4 + d)
-        if fc == 'theme1':
+        if fc in ('theme1', 'FF000000'):
             if v: conflict.append((n, str(s + dt.timedelta(d)), v))
             o.value = 'V'
         else: o.value = v
         dd = s + dt.timedelta(d)
-        if ACU and n == ACU[0] and ACU[1] <= dd <= ACU[2] and not v and fc != 'theme1' and dd.weekday() < 5:
+        if ACU and n == ACU[0] and ACU[1] <= dd <= ACU[2] and not v and fc not in ('theme1', 'FF000000') and dd.weekday() < 5:
             o.value = 'A'; nA += 1; continue
         if fc and fc.endswith('FF0000'): o.fill = PatternFill('solid', fgColor='FFFF0000')
         elif fc == 'FF00B0F0': o.fill = PatternFill('solid', fgColor='FF00B0F0')
