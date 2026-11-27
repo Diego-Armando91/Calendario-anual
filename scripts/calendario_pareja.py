@@ -2,6 +2,8 @@
 Borde rojo: solape con los niños (hasta el 14 sep, incluye salir de noche y que la pareja entre de mañana); borde azul: trabajan los dos sin solape.
   python calendario_pareja.py ../data/CALENDARIO2027V1.1_encargado_PA.xlsx ../data/pilar/Calendario_2027_pilar.pdf Pilar V1.1"""
 import sys, os, calendar, datetime as dt, openpyxl
+SIMPLE = '--simple' in sys.argv
+if SIMPLE: sys.argv.remove('--simple')   # sin marcar solapes ni libres: solo los turnos de cada uno
 TAG = sys.argv.pop(4) if len(sys.argv) > 4 else ''
 from pareja_datos import *
 from matplotlib.patches import Rectangle
@@ -44,6 +46,7 @@ for m in range(1, 13):
             ax.text(c + .06, y + .17, str(day), ha='left', va='center', fontsize=11, fontweight='bold', color=ta)
             if DCODE[d]: ax.text(c + .62, y + .3, DCODE[d], ha='center', va='center', fontsize=10, color=ta)
             if plab(d): ax.text(c + .5, y + .76, plab(d), ha='center', va='center', fontsize=9.5, color=tb)
+            if SIMPLE: continue
             if d in PROB: ax.add_patch(Rectangle((c + .04, y + .04), .92, .92, facecolor='none', edgecolor='#C00000', linewidth=3.8))
             elif d in BOTH: ax.add_patch(Rectangle((c + .04, y + .04), .92, .92, facecolor='none', edgecolor='#1F3864', linewidth=3.2, linestyle=(0, (2, 1))))
             if d in LIBRES and a != 'FEST': ax.text(c + .9, y + .17, '★', ha='center', va='center', fontsize=10, color='#2E7D32' if a != 'VAC' else 'white')
@@ -56,8 +59,9 @@ h = [Rectangle((0,0),1,1,facecolor=COL['M'],edgecolor='#999',label='Mañana'), R
      Rectangle((0,0),1,1,facecolor='white',edgecolor='#C00000',linewidth=3,label='Solape: hace falta ayuda con los niños (hasta 14 sep)'),
      Rectangle((0,0),1,1,facecolor='white',edgecolor='#1F3864',linewidth=3,linestyle=(0,(2,1)),label='Trabajáis los dos (sin solape)'),
      plt.Line2D([], [], marker='*', color='#2E7D32', linestyle='None', markersize=14, label='Libráis los dos')]
+if SIMPLE: h = h[:6]
 fig.legend(handles=h, loc='lower center', ncol=3, fontsize=13, frameon=False, bbox_to_anchor=(0.5, 0.03))
-fig.text(0.5, 0.012, f'{len(BOTH)} días trabajáis los dos · {len(PROB)} con solape hasta el 14 de septiembre · {len(LIBRES)} días libráis los dos',
+if not SIMPLE: fig.text(0.5, 0.012, f'{len(BOTH)} días trabajáis los dos · {len(PROB)} con solape hasta el 14 de septiembre · {len(LIBRES)} días libráis los dos',
          ha='center', fontsize=13, color='#444')
-out = os.path.join(OUT, f'Calendario_2027_Diego_{NOMBRE}' + (f'_{TAG}' if TAG else '') + '.png')
+out = os.path.join(OUT, f'Calendario_2027_Diego_{NOMBRE}' + (f'_{TAG}' if TAG else '') + ('_turnos' if SIMPLE else '') + '.png')
 plt.savefig(out, dpi=130, facecolor='white'); print('ok', out, len(BOTH), len(PROB), len(LIBRES))
